@@ -555,7 +555,7 @@ export default function AdminDashboard() {
   const getWhatsAppLink = (guest: Guest) => {
     if (!settings) return "";
     const origin = window.location.origin;
-    const inviteLink = `${origin}/to:${encodeURIComponent(guest.name)}`;
+    const inviteLink = `${origin}/?to=${encodeURIComponent(guest.name)}`;
     
     let msg = settings.invitationTemplate || "";
     msg = msg.replace(/{nama}/g, guest.name);
@@ -585,7 +585,7 @@ export default function AdminDashboard() {
 
   const handleCopyLink = (name: string) => {
     const origin = window.location.origin;
-    const inviteLink = `${origin}/to:${encodeURIComponent(name)}`;
+    const inviteLink = `${origin}/?to=${encodeURIComponent(name)}`;
     navigator.clipboard.writeText(inviteLink);
     showToast("Link undangan berhasil disalin! 📋", "success");
   };
@@ -1835,7 +1835,7 @@ export default function AdminDashboard() {
                       <p>Gunakan tag dinamis berikut di dalam template pesan Anda. Tag akan otomatis diganti ketika pesan dikirimkan:</p>
                       <ul className="list-disc pl-4 space-y-1 font-mono text-neutral-400">
                         <li><strong className="text-white">{"{nama}"}</strong> : Nama dari tamu (misal: Budi Santoso)</li>
-                        <li><strong className="text-white">{"{link}"}</strong> : Link undangan tamu tersebut (misal: http://domain.com/to:Budi%20Santoso)</li>
+                        <li><strong className="text-white">{"{link}"}</strong> : Link undangan tamu tersebut (misal: http://domain.com/?to=Budi%20Santoso)</li>
                       </ul>
                       <p className="mt-2 text-neutral-500">Anda dapat memformat pesan menggunakan cetak tebal (*teks*), miring (_teks_), atau coret (~teks~) yang didukung oleh WhatsApp.</p>
                     </div>
@@ -2204,7 +2204,7 @@ export default function AdminDashboard() {
                       </tr>
                     ) : (
                       filteredGuests.map((guest) => {
-                        const guestInviteUrl = `/to:${encodeURIComponent(guest.name)}`;
+                        const guestInviteUrl = `/?to=${encodeURIComponent(guest.name)}`;
                         return (
                           <tr key={guest._id} className="hover:bg-neutral-950/20 transition-all">
                             <td className="px-6 py-4 font-semibold text-white">{guest.name}</td>

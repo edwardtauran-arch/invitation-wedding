@@ -6,6 +6,7 @@ import MainContent from "./components/MainContent";
 
 export default function Home() {
   const [showContent, setShowContent] = useState(false);
+  const [name, setName] = useState<string>("");
   const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
@@ -14,6 +15,11 @@ export default function Home() {
     const isPreview = urlParams.get("preview") === "true";
     if (isPreview) {
       setShowContent(true);
+    }
+    
+    const toParam = urlParams.get("to");
+    if (toParam) {
+      setName(decodeURIComponent(toParam).trim());
     }
 
     // Fetch dynamic settings
@@ -73,7 +79,7 @@ export default function Home() {
   return (
     <div className="h-screen">
       <ScreenStart config={settings} />
-      {showContent && <MainContent config={settings} />}
+      {showContent && <MainContent name={name} config={settings} />}
     </div>
   );
 }
