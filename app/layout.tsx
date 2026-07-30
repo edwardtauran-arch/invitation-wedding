@@ -32,12 +32,36 @@ const ovo = Ovo({
 });
 
 export async function generateMetadata() {
+  const siteUrl = process.env.URL || process.env.NEXT_PUBLIC_SITE_URL || "https://edwardian.netlify.app";
+  
   try {
     const settings = await getDynamicSettings();
     const coupleNames = settings?.coupleNames || "EDWARD & DIAN";
+    const slide10Image = settings?.slideImages?.slide10 || "/slide_9.jpg";
+    
+    // Ensure image is absolute URL for WhatsApp thumbnail
+    const absoluteImageUrl = slide10Image.startsWith("http") 
+      ? slide10Image 
+      : `${siteUrl}${slide10Image.startsWith("/") ? "" : "/"}${slide10Image}`;
+
     return {
-      title: `The Wedding of ${coupleNames.toUpperCase()}`,
+      title: `THE Wedding of ${coupleNames.toUpperCase()}`,
       description: `Wedding Invitation of ${coupleNames.toUpperCase()}, Crafted with Love`,
+      openGraph: {
+        title: `THE Wedding of ${coupleNames.toUpperCase()}`,
+        description: `Kami mengundang Anda untuk hadir di acara pernikahan kami.`,
+        url: siteUrl,
+        siteName: `The Wedding of ${coupleNames}`,
+        images: [
+          {
+            url: absoluteImageUrl,
+            width: 1200,
+            height: 630,
+            alt: `The Wedding of ${coupleNames}`,
+          },
+        ],
+        type: 'website',
+      },
     };
   } catch (error) {
     return {
