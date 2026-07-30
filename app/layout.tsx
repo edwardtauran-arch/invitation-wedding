@@ -5,6 +5,8 @@ import "./globals.css";
 import { config } from "@/lib/config";
 import { getDynamicSettings } from "@/lib/dbHelper";
 
+export const dynamic = "force-dynamic";
+
 const legan = localFont({
   src: "./fonts/Legan.woff",
   variable: "--font-legan",
