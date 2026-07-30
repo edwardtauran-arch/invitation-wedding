@@ -40,9 +40,12 @@ export async function generateMetadata() {
     const slide10Image = settings?.slideImages?.slide10 || "/slide_9.jpg";
     
     // Ensure image is absolute URL for WhatsApp thumbnail
-    const absoluteImageUrl = slide10Image.startsWith("http") 
+    // WhatsApp requires og:image to be < 300KB, so we route it through Next.js image optimization
+    const imagePath = slide10Image.startsWith("http") 
       ? slide10Image 
-      : `${siteUrl}${slide10Image.startsWith("/") ? "" : "/"}${slide10Image}`;
+      : `${slide10Image.startsWith("/") ? "" : "/"}${slide10Image}`;
+      
+    const absoluteImageUrl = `${siteUrl}/_next/image?url=${encodeURIComponent(imagePath)}&w=1080&q=75`;
 
     return {
       title: `THE Wedding of ${coupleNames.toUpperCase()}`,
