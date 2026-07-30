@@ -18,7 +18,7 @@ async function ensureDataDir() {
 
 async function safeWriteFile(filePath: string, content: string) {
   if (process.env.NODE_ENV !== "production") {
-    await safeWriteFile(filePath, content);
+    await fs.writeFile(filePath, content);
   }
 }
 
