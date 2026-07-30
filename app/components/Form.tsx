@@ -34,25 +34,30 @@ const Form = ({ guestName }: FormProps) => {
       return;
     }
 
-    const response = await fetch("/api/submit", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-    if (response.ok) {
-      // Reset the form if submission is successful
-      form.reset();
-      setAttendance("Hadir");
-      setGuests("1");
-      alert("Ucapan berhasil dikirim!");
-    } else {
-      alert("Gagal mengirim ucapan");
+      if (response.ok) {
+        // Reset the form if submission is successful
+        form.reset();
+        setAttendance("Hadir");
+        setGuests("1");
+        alert("Ucapan berhasil dikirim!");
+      } else {
+        alert("Gagal mengirim ucapan");
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      alert("Terjadi kesalahan jaringan.");
+    } finally {
+      setLoading(false); // Pastikan selalu di-reset
     }
-
-    setLoading(false); // Set loading to false after response
   };
 
   return (
