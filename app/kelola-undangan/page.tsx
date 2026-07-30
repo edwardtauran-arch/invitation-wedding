@@ -5,7 +5,7 @@ import {
   FaSave, FaPlus, FaTrash, FaWhatsapp, FaCopy, FaEdit, 
   FaMusic, FaImage, FaUsers, FaComments, FaCogs, FaCheckCircle, 
   FaInfoCircle, FaFileCsv, FaEye, FaHourglassHalf, FaExternalLinkAlt,
-  FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle
+  FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars
 } from "react-icons/fa";
 
 interface Settings {
@@ -144,6 +144,8 @@ export default function AdminDashboard() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isEditNavOpen, setIsEditNavOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -676,7 +678,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <nav className="flex items-center gap-x-2">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-x-2">
             <button
               onClick={() => setActiveTab("settings")}
               className={`flex items-center gap-x-2 px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
@@ -739,7 +742,7 @@ export default function AdminDashboard() {
               title="Lihat Undangan (Buka Tab Baru)"
             >
               <FaEye className="w-4 h-4" />
-              <span className="hidden md:inline">Lihat Undangan</span>
+              <span>Lihat Undangan</span>
             </a>
 
             <span className="w-[1px] h-6 bg-neutral-800 mx-2"></span>
@@ -750,10 +753,118 @@ export default function AdminDashboard() {
               title="Keluar (Logout)"
             >
               <FaSignOutAlt className="w-4 h-4" />
-              <span className="hidden md:inline">Keluar</span>
+              <span>Keluar</span>
             </button>
           </nav>
+
+          {/* Mobile Menu Button (Garis 3) */}
+          <div className="lg:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-neutral-400 hover:text-white p-2 rounded-lg focus:outline-none transition-all duration-200"
+              aria-label="Toggle Menu"
+            >
+              {isMobileMenuOpen ? (
+                <FaTimesCircle className="w-6 h-6 text-white" />
+              ) : (
+                <FaBars className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-neutral-800 bg-neutral-950/95 backdrop-blur-xl px-6 py-4 space-y-3">
+            <button
+              onClick={() => {
+                setActiveTab("settings");
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center gap-x-3 w-full px-4 py-3 rounded-lg text-sm transition-all ${
+                activeTab === "settings"
+                  ? "bg-white text-black font-semibold shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+              }`}
+            >
+              <FaCogs className="w-5 h-5" />
+              <span>Pengaturan Undangan</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("guests");
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center gap-x-3 w-full px-4 py-3 rounded-lg text-sm transition-all ${
+                activeTab === "guests"
+                  ? "bg-white text-black font-semibold shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+              }`}
+            >
+              <FaUsers className="w-5 h-5" />
+              <span>Daftar Tamu</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("rsvp");
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center gap-x-3 w-full px-4 py-3 rounded-lg text-sm transition-all ${
+                activeTab === "rsvp"
+                  ? "bg-white text-black font-semibold shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+              }`}
+            >
+              <FaCheckCircle className="w-5 h-5" />
+              <span>RSVP</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab("wishes");
+                setIsMobileMenuOpen(false);
+              }}
+              className={`flex items-center gap-x-3 w-full px-4 py-3 rounded-lg text-sm transition-all ${
+                activeTab === "wishes"
+                  ? "bg-white text-black font-semibold shadow-md"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+              }`}
+            >
+              <FaComments className="w-5 h-5" />
+              <span>Ucapan</span>
+              {wishes.length > 0 && (
+                <span className="bg-red-500 text-white text-[10px] h-5 px-1.5 flex items-center justify-center rounded-full font-bold ml-auto">
+                  {wishes.length}
+                </span>
+              )}
+            </button>
+
+            <hr className="border-neutral-800" />
+
+            <a
+              href="/"
+              target="_blank"
+              className="flex items-center gap-x-3 w-full px-4 py-3 rounded-lg text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all border border-neutral-800"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <FaEye className="w-5 h-5" />
+              <span>Lihat Undangan</span>
+            </a>
+
+            <button
+              onClick={() => {
+                setIsLogoutModalOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              className="flex items-center gap-x-3 w-full px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-950/20 rounded-lg text-sm transition-all"
+            >
+              <FaSignOutAlt className="w-5 h-5" />
+              <span>Keluar</span>
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="max-w-7xl mx-auto px-6 mt-8">
@@ -768,8 +879,149 @@ export default function AdminDashboard() {
         {/* TAB 1: SETTINGS / CUSTOMIZATION */}
         {activeTab === "settings" && settings && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Sidebar navigation for settings */}
-            <div className="lg:col-span-3 space-y-2">
+            {/* Mobile View Navigation Toggle for settingsSection */}
+            <div className="lg:hidden flex items-center justify-between bg-neutral-900/60 border border-neutral-800/80 p-4 rounded-xl backdrop-blur-md w-full">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-widest block font-bold">Navigasi Edit</span>
+                <span className="text-sm font-semibold text-white uppercase tracking-wider mt-0.5">
+                  {settingsSection === "general" && "Umum & Tanggal"}
+                  {settingsSection === "loveJourney" && "Kisah Cinta (Love Journey)"}
+                  {settingsSection === "groomBride" && "Mempelai (Groom & Bride)"}
+                  {settingsSection === "events" && "Acara & Maps"}
+                  {settingsSection === "media" && "Lagu & Foto (Media)"}
+                  {settingsSection === "template" && "Template Undangan WA"}
+                  {settingsSection === "weddingGift" && "Hadiah / Amplop Digital"}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsEditNavOpen(true)}
+                className="flex items-center gap-x-2 bg-white text-black hover:bg-neutral-200 transition font-bold px-4 py-2 rounded-lg text-xs shadow-md"
+              >
+                <FaBars className="w-3.5 h-3.5" />
+                <span>Pilih Bagian</span>
+              </button>
+            </div>
+
+            {/* Drawer Overlay for Mobile Settings Navigation */}
+            {isEditNavOpen && (
+              <div className="fixed inset-0 z-50 lg:hidden flex">
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+                  onClick={() => setIsEditNavOpen(false)}
+                />
+                
+                {/* Drawer Content */}
+                <div className="relative flex flex-col w-80 max-w-[80vw] h-full bg-neutral-950 border-r border-neutral-800/80 p-6 shadow-2xl transition-transform duration-300 ease-in-out">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm uppercase text-neutral-400 font-bold tracking-wider">Navigasi Edit</h3>
+                    <button 
+                      onClick={() => setIsEditNavOpen(false)}
+                      className="text-neutral-400 hover:text-white p-1"
+                    >
+                      <FaTimesCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto space-y-2">
+                    <button
+                      onClick={() => {
+                        setSettingsSection("general");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "general"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Umum & Tanggal
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSettingsSection("loveJourney");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "loveJourney"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Kisah Cinta (Love Journey)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSettingsSection("groomBride");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "groomBride"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Mempelai (Groom & Bride)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSettingsSection("events");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "events"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Acara & Maps
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSettingsSection("media");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "media"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Lagu & Foto (Media)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSettingsSection("template");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "template"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Template Undangan WA
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSettingsSection("weddingGift");
+                        setIsEditNavOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${
+                        settingsSection === "weddingGift"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                    >
+                      Hadiah / Amplop Digital
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sidebar navigation for settings - DESKTOP ONLY */}
+            <div className="hidden lg:block lg:col-span-3 space-y-2">
               <h3 className="text-xs uppercase text-neutral-400 font-bold px-3 mb-4 tracking-wider">Navigasi Edit</h3>
               <button
                 onClick={() => setSettingsSection("general")}
