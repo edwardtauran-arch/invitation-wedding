@@ -1,0 +1,103 @@
+{
+  "coupleNames": "EDWARD & DIAN",
+  "eventDate": "2026-10-11T15:15",
+  "groom": "Edward Ridley Tauran",
+  "groomNickName": "Edward",
+  "groomInstagram": "tompel98",
+  "groomBio": "Anak Pertama dari Pasangan Bpk. Jeffri P. Tauran & Ibu D. Erny Tauran/P",
+  "groomTitleFront": "",
+  "groomTitleBack": "",
+  "bride": "Mardianti Ekaputri P",
+  "brideNickName": "Dian",
+  "brideInstagram": "dianpangandaheng",
+  "brideBio": "Anak Pertama dari Pasangan Bpk. Ronny Pangandaheng & Agus Sulistiani",
+  "brideTitleFront": "",
+  "brideTitleBack": "",
+  "bibleVerse": "KOLOSE 3:23",
+  "bibleVerseContent": "Apa pun juga yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan dan bukan untuk manusia.",
+  "timeline_1": "JANUARY 2016",
+  "timeline_1_content": "PERTAMA KETEMU TAPI DALAM DIMENSI LAIN DALAM WUJUD RUPA SEORANG SINGLE YANG KURANG TERTATA",
+  "timeline_2": "AGUSTUS 2021",
+  "timeline_2_content": "NAIK PRAU BERSAMA-SAMA PERTAMA KALI",
+  "timeline_3": "OKTOBER 2025",
+  "timeline_3_content": "TUNANGAN DEH, SIAP DI HALALIN. CEILEH",
+  "timeline_4": "",
+  "timeline_4_content": "",
+  "timeline_5": "",
+  "timeline_5_content": "",
+  "timelineCount": 3,
+  "holyMatrimony": {
+    "enabled": true,
+    "time": "12.00 - 01.00 PM",
+    "place": "JISDAC",
+    "place_details": "Gedung Pertemuan Advent 5th Floor, Jl. Letjen M.T. Haryono No.Blok A Kav 4-5, RT.1/RW.6, Tebet Bar., Kec. Tebet, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12820",
+    "googleMapsLink": "https://maps.app.goo.gl/SfDpGhmPHtaSRrEA9"
+  },
+  "weddingReception": {
+    "enabled": false,
+    "time": "01.00 - 03.00 PM",
+    "place": "Gereja Katedral Jakarta",
+    "place_details": "",
+    "googleMapsLink": "https://goo.gl/maps/7Q6"
+  },
+  "livestreaming": {
+    "enabled": true,
+    "time": "12.00",
+    "link": "https://www.youtube.com/watch?v=Q5J",
+    "detail": "Streaming By: xxxx"
+  },
+  "prewedding": {
+    "enabled": true,
+    "link": "YkO-e-gyp58",
+    "detail": ""
+  },
+  "rsvp": {
+    "enabled": true,
+    "detail": ""
+  },
+  "thankyou": "Thank You For Your attendance",
+  "thankyouDetail": "Tetap Doakan kami yah Saudara",
+  "musicPath": "/music/wedding_song.mp3",
+  "galleryImages": [
+    "/uploads/1785343248154_IMG_0330.JPG.jpeg",
+    "/uploads/1785343258643_IMG_0328.JPG.jpeg",
+    "/uploads/1785343270256_IMG_0320.JPG.jpeg",
+    "/uploads/1785343278196_IMG_0334.JPG.jpeg",
+    "/uploads/1785343289532_IMG_0333.JPG.jpeg",
+    "/uploads/1785343295634_IMG_0323.JPG.jpeg",
+    "/uploads/1785343304304_IMG_0335.JPG.jpeg",
+    "/uploads/1785343317249_IMG_0326.JPG.jpeg",
+    "/uploads/1785343330314_IMG_0318.JPG.jpeg"
+  ],
+  "slideImages": {
+    "slide1": "/uploads/1785343199935_IMG_0325.JPG.jpeg",
+    "slide2": "/slide_2.jpg",
+    "slide3": "/slide_3.jpg",
+    "slide4": "/uploads/1785345571250_IMG_0327.JPG.jpeg",
+    "slide5": "/uploads/1785343144607_IMG_0328.JPG.jpeg",
+    "slide6": "/uploads/1785343149772_IMG_0320.JPG.jpeg",
+    "slide7": "/uploads/1785345632088_IMG_0334.JPG.jpeg",
+    "slide8": "/uploads/1785343161744_IMG_0329.JPG.jpeg",
+    "slide9": "/uploads/1785343177705_IMG_0332.JPG.jpeg",
+    "slide10": "/uploads/1785345578530_IMG_0335.JPG.jpeg",
+    "sideImage": "/uploads/1785343235506_IMG_0318.JPG.jpeg"
+  },
+  "invitationTemplate": "Halo *{nama}*,\n\nKami mengundang Anda untuk menghadiri acara pernikahan kami. Berikut link undangan digital Anda:\n{link}\n\nMerupakan suatu kehormatan bagi kami jika Anda berkenan hadir.\n\nTerima kasih!",
+  "weddingGift": {
+    "enabled": true,
+    "qrisImage": "/uploads/1785255967232_WhatsApp_Image_2026-05-20_at_21.29.11.jpeg",
+    "qrisOwnerName": "Tompelsehat",
+    "bankAccounts": [
+      {
+        "bankName": "Mandiri",
+        "accountNumber": "1240010788900",
+        "accountHolderName": "Edward Ridley Tauran"
+      },
+      {
+        "bankName": "BANK SMBC",
+        "accountNumber": "90360127959",
+        "accountHolderName": "Mardianti Ekaputri P"
+      }
+    ]
+  }
+}

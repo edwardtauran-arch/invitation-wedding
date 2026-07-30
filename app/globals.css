@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-ovo: 'Ovo', serif;
+  --font-legan: 'Legan', serif;
+  --font-wonder: 'Wonder', sans-serif;
+  --font-thesignature: 'Thesignature', sans-serif;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+
+.fade-in {
+  animation: fadeIn 1s ease-in-out;
+}
+
+#backgroundWedding {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-image 2s ease-in-out;
+  background-color: #0a0a0a;
+}
+
+#backgroundWedding > div {
+  animation: fade 5s infinite;
+}
+
+/* Animasi fade-in dan gerakan */
+.fadeMain {
+  opacity: 0;
+  transition: opacity 3s ease-in;
+}
+.fadeMain2 {
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+
+.fadeInMove {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+}
+.fadeInMoveSlow {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 2s ease-in, transform 2s ease-out;
+}
+
+.fadeInLeft {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+}
+
+.fadeInLeftSlow {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 2.5s ease-out, transform 2.5s ease-out;
+}
+
+.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.animate-zoomIn {
+  animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Premium Gallery Card Interactions */
+.gallery-card {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 1s ease-out;
+}
+
+.gallery-card:hover {
+  transform: scale(1.03) translateY(-4px) !important;
+  box-shadow: 0 12px 24px rgba(74, 59, 50, 0.15);
+  z-index: 10;
+}
+
+.gallery-card img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-card:hover img {
+  transform: scale(1.08);
+}
