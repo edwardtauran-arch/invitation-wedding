@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { deleteDynamicWish } from "@/lib/dbHelper";
 import { cookies } from "next/headers";
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const cookieStore = cookies();
-  const token = cookieStore.get("admin_session");
+function isAuthorized() {
+  const session = cookies().get("admin_session")?.value;
+  return session === "authenticated";
+}
 
-  if (!token || token.value !== "authenticated") {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  if (!isAuthorized()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

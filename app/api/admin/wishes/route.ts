@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { isAuthorized } from "@/lib/authHelper";
 import { clearDynamicWishes } from "@/lib/dbHelper";
 import { cookies } from "next/headers";
 
-export async function DELETE() {
-  const cookieStore = cookies();
-  const token = cookieStore.get("admin_session");
+function isAuthorized() {
+  const session = cookies().get("admin_session")?.value;
+  return session === "authenticated";
+}
 
-  if (!token || token.value !== "authenticated") {
+export async function DELETE() {
+  if (!isAuthorized()) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,4 +20,3 @@ export async function DELETE() {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
