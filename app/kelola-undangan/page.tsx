@@ -140,6 +140,7 @@ export default function AdminDashboard() {
   const [currentEditingGuest, setCurrentEditingGuest] = useState<Partial<Guest> | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -165,7 +166,7 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/check-auth");
       if (res.ok) {
         setIsAuthenticated(true);
-        fetchInitialData();
+        fetchInitialData(false);
       } else {
         setIsAuthenticated(false);
         setLoading(false);
@@ -191,7 +192,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         setIsAuthenticated(true);
         setLoading(true);
-        fetchInitialData();
+        fetchInitialData(false);
       } else {
         const errData = await res.json();
         setLoginError(errData.error || "Password salah!");
@@ -218,8 +219,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchInitialData = async () => {
-    setLoading(true);
+  const fetchInitialData = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
       // 1. Fetch settings
       const settingsRes = await fetch("/api/admin/settings");
@@ -244,7 +250,11 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setIsRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -1817,11 +1827,12 @@ export default function AdminDashboard() {
 
               <div className="flex gap-x-2">
                 <button
-                  onClick={() => fetchInitialData()}
-                  className="flex items-center gap-x-2 bg-neutral-900/60 hover:bg-neutral-800 text-white border border-neutral-700 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                  onClick={() => fetchInitialData(true)}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-x-2 bg-neutral-900/60 hover:bg-neutral-800 text-white border border-neutral-700 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md disabled:opacity-50"
                 >
-                  <FaSync className="w-4 h-4" />
-                  <span className="hidden md:inline">Refresh</span>
+                  <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                  <span className="hidden md:inline">{isRefreshing ? "Menyegarkan..." : "Refresh"}</span>
                 </button>
                 <button
                   onClick={() => handleOpenGuestModal()}
@@ -1992,11 +2003,12 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex gap-x-2">
                   <button
-                    onClick={() => fetchInitialData()}
-                    className="flex items-center gap-x-2 bg-neutral-900/60 hover:bg-neutral-800 text-white border border-neutral-700 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                    onClick={() => fetchInitialData(true)}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-x-2 bg-neutral-900/60 hover:bg-neutral-800 text-white border border-neutral-700 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md disabled:opacity-50"
                   >
-                    <FaSync className="w-4 h-4" />
-                    <span className="hidden md:inline">Refresh</span>
+                    <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    <span className="hidden md:inline">{isRefreshing ? "Menyegarkan..." : "Refresh"}</span>
                   </button>
                   {wishes.length > 0 && (
                     <button
@@ -2096,11 +2108,12 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex gap-x-2">
                   <button
-                    onClick={() => fetchInitialData()}
-                    className="flex items-center gap-x-2 bg-neutral-900/60 hover:bg-neutral-800 text-white border border-neutral-700 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                    onClick={() => fetchInitialData(true)}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-x-2 bg-neutral-900/60 hover:bg-neutral-800 text-white border border-neutral-700 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md disabled:opacity-50"
                   >
-                    <FaSync className="w-4 h-4" />
-                    <span className="hidden md:inline">Refresh</span>
+                    <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    <span className="hidden md:inline">{isRefreshing ? "Menyegarkan..." : "Refresh"}</span>
                   </button>
                   {wishes.length > 0 && (
                     <button
