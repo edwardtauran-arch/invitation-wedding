@@ -106,7 +106,13 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
   useEffect(() => {
     if (slideshowImages.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentSlideIndex(prev => (prev + 1) % slideshowImages.length);
+      setCurrentSlideIndex(prev => {
+        let nextIndex = prev;
+        while (nextIndex === prev) {
+          nextIndex = Math.floor(Math.random() * slideshowImages.length);
+        }
+        return nextIndex;
+      });
     }, 4000); // ganti foto tiap 4 detik
     return () => clearInterval(interval);
   }, [slideshowImages.length]);
@@ -266,10 +272,25 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
       <div className=" md:w-1/3 h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth">
         <div
           id="backgroundWedding"
-          className=" snap-start  w-full h-screen flex items-center justify-center "
-          style={{ backgroundImage: `url(${slideshowImages[currentSlideIndex]})` }}
+          className=" snap-start relative w-full h-screen flex items-center justify-center overflow-hidden"
         >
-          <div className="text-center p-5 flex flex-col h-full justify-between py-20">
+          {/* Background Images Slideshow */}
+          {slideshowImages.map((src, index) => (
+            <div
+              key={index}
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${src})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: index === currentSlideIndex ? 1 : 0,
+                transition: "opacity 1.5s ease-in-out",
+                zIndex: 0
+              }}
+            />
+          ))}
+          
+          <div className="relative z-10 text-center p-5 flex flex-col h-full justify-between py-20 w-full">
             <div className="gap-y-2 md:gap-y-4 flex flex-col bg-black/10 backdrop-blur-[2px] rounded-xl p-4 md:p-6 border border-white/10 w-fit h-fit mx-auto">
               <h5
                 className={`text-sm font-legan text-white uppercase tracking-wide fadeMain2 ${isMain2InView ? "active" : ""
