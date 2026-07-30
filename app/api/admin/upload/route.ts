@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     if (error) {
       console.error("Supabase storage upload error:", error);
       return NextResponse.json(
-        { error: "Failed to upload to storage" },
+        { error: "Failed to upload to storage: " + error.message },
         { status: 500 }
       );
     }
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     // Retrieve the public URL
     const { data: publicUrlData } = supabase.storage
       .from("wedding-assets")
-      .getPublicUrl(filename);
+      .getPublicUrl(data.path);
 
     // Return the accessible public URL path
     return NextResponse.json({ url: publicUrlData.publicUrl });

@@ -379,11 +379,12 @@ export default function AdminDashboard() {
         handleUpdateField(path, data.url);
         showToast(`File ${file.name} berhasil diunggah!`, "success");
       } else {
-        showToast("Gagal mengunggah file.", "error");
+        const errorData = await res.json().catch(() => ({}));
+        showToast(errorData.error || "Gagal mengunggah file.", "error");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      showToast("Error mengunggah file.", "error");
+      showToast(error.message || "Error mengunggah file.", "error");
     }
   };
 
@@ -476,11 +477,12 @@ export default function AdminDashboard() {
         handleUpdateGalleryImage(index, data.url);
         showToast(`Foto ${file.name} berhasil diunggah!`, "success");
       } else {
-        showToast("Gagal mengunggah foto.", "error");
+        const errorData = await res.json().catch(() => ({}));
+        showToast(errorData.error || "Gagal mengunggah foto.", "error");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      showToast("Error mengunggah foto.", "error");
+      showToast(error.message || "Error mengunggah foto.", "error");
     }
   };
 
