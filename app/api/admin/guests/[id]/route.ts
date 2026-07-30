@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { isAuthorized } from "@/lib/authHelper";
 import { updateDynamicGuest, deleteDynamicGuest } from "@/lib/dbHelper";
 
 type ParamsProps = {
   params: { id: string };
 };
-
-function isAuthorized() {
-  const session = cookies().get("admin_session")?.value;
-  return session === "authenticated";
-}
 
 export async function PUT(req: Request, { params }: ParamsProps) {
   if (!isAuthorized()) {

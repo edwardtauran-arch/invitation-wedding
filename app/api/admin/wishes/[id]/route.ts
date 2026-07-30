@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
+import { isAuthorized } from "@/lib/authHelper";
 import { deleteDynamicWish } from "@/lib/dbHelper";
-import { cookies } from "next/headers";
-
-function isAuthorized() {
-  const session = cookies().get("admin_session")?.value;
-  return session === "authenticated";
-}
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   if (!isAuthorized()) {
