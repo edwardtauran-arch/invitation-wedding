@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { 
   FaSave, FaPlus, FaTrash, FaWhatsapp, FaCopy, FaEdit, 
   FaMusic, FaImage, FaUsers, FaComments, FaCogs, FaCheckCircle, 
@@ -147,6 +147,23 @@ export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditNavOpen, setIsEditNavOpen] = useState(false);
 
+  // Toast notification system
+  const [toasts, setToasts] = useState<{id: number; message: string; type: "success" | "error" | "info"}[]>([]);
+  const toastIdRef = useRef(0);
+
+  const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
+
+  // Custom confirm modal
+  const [confirmModal, setConfirmModal] = useState<{open: boolean; message: string; onConfirm: () => void} | null>(null);
+
+  const showConfirm = (message: string, onConfirm: () => void) => {
+    setConfirmModal({ open: true, message, onConfirm });
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -261,31 +278,37 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteWish = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus ucapan ini?")) return;
-    try {
-      const res = await fetch(`/api/admin/wishes/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setWishes(prev => prev.filter(w => w._id !== id));
+    showConfirm("Yakin ingin menghapus ucapan ini?", async () => {
+      try {
+        const res = await fetch(`/api/admin/wishes/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          setWishes(prev => prev.filter(w => w._id !== id));
+          showToast("Ucapan berhasil dihapus.", "success");
+        } else {
+          showToast("Gagal menghapus ucapan.", "error");
+        }
+      } catch (e) {
+        console.error(e);
+        showToast("Terjadi kesalahan saat menghapus.", "error");
       }
-      else alert("Gagal menghapus ucapan.");
-    } catch (e) {
-      console.error(e);
-      alert("Terjadi kesalahan");
-    }
+    });
   };
 
   const handleClearWishes = async () => {
-    if (!confirm("PERINGATAN: Anda yakin ingin menghapus SEMUA ucapan? Tindakan ini tidak dapat dibatalkan!")) return;
-    try {
-      const res = await fetch("/api/admin/wishes", { method: "DELETE" });
-      if (res.ok) {
-        setWishes([]);
+    showConfirm("⚠️ PERINGATAN: Hapus SEMUA ucapan? Tindakan ini tidak dapat dibatalkan!", async () => {
+      try {
+        const res = await fetch("/api/admin/wishes", { method: "DELETE" });
+        if (res.ok) {
+          setWishes([]);
+          showToast("Semua ucapan berhasil dihapus.", "success");
+        } else {
+          showToast("Gagal menghapus semua ucapan.", "error");
+        }
+      } catch (e) {
+        console.error(e);
+        showToast("Terjadi kesalahan.", "error");
       }
-      else alert("Gagal menghapus semua ucapan.");
-    } catch (e) {
-      console.error(e);
-      alert("Terjadi kesalahan");
-    }
+    });
   };
 
   const handleSaveSettings = async () => {
@@ -300,13 +323,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
-        alert("Pengaturan undangan berhasil disimpan!");
+        showToast("Pengaturan undangan berhasil disimpan! ✨", "success");
       } else {
-        alert("Gagal menyimpan pengaturan.");
+        showToast("Gagal menyimpan pengaturan.", "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Terjadi kesalahan.");
+      showToast("Terjadi kesalahan.", "error");
     } finally {
       setSavingSettings(false);
     }
@@ -353,13 +376,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         handleUpdateField(path, data.url);
-        alert(`File ${file.name} berhasil diunggah!`);
+        showToast(`File ${file.name} berhasil diunggah!`, "success");
       } else {
-        alert("Gagal mengunggah file.");
+        showToast("Gagal mengunggah file.", "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Error mengunggah file.");
+      showToast("Error mengunggah file.", "error");
     }
   };
 
@@ -405,13 +428,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         handleUpdateField("weddingGift.qrisImage", data.url);
-        alert("Gambar QRIS berhasil diunggah!");
+        showToast("Gambar QRIS berhasil diunggah!", "success");
       } else {
-        alert("Gagal mengunggah QRIS.");
+        showToast("Gagal mengunggah QRIS.", "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Error mengunggah QRIS.");
+      showToast("Error mengunggah QRIS.", "error");
     }
   };
 
@@ -450,13 +473,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         handleUpdateGalleryImage(index, data.url);
-        alert(`File ${file.name} berhasil diunggah!`);
+        showToast(`Foto ${file.name} berhasil diunggah!`, "success");
       } else {
-        alert("Gagal mengunggah file.");
+        showToast("Gagal mengunggah foto.", "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Error mengunggah file.");
+      showToast("Error mengunggah foto.", "error");
     }
   };
 
@@ -468,7 +491,7 @@ export default function AdminDashboard() {
 
   const handleSaveGuest = async () => {
     if (!currentEditingGuest || !currentEditingGuest.name) {
-      alert("Nama tamu harus diisi!");
+      showToast("Nama tamu harus diisi!", "error");
       return;
     }
 
@@ -487,32 +510,37 @@ export default function AdminDashboard() {
         const saved = await res.json();
         if (isEdit) {
           setGuests(prev => prev.map(g => g._id === saved._id ? saved : g));
+          showToast("Data tamu berhasil diperbarui.", "success");
         } else {
           setGuests(prev => [saved, ...prev]);
+          showToast("Tamu baru berhasil ditambahkan! 🎉", "success");
         }
         setIsGuestModalOpen(false);
         setCurrentEditingGuest(null);
       } else {
-        alert("Gagal menyimpan data tamu.");
+        showToast("Gagal menyimpan data tamu.", "error");
       }
     } catch (error) {
       console.error(error);
-      alert("Error menyimpan tamu.");
+      showToast("Error menyimpan tamu.", "error");
     }
   };
 
   const handleDeleteGuest = async (id: string) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus tamu ini?")) return;
-    try {
-      const res = await fetch(`/api/admin/guests/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setGuests(prev => prev.filter(g => g._id !== id));
-      } else {
-        alert("Gagal menghapus tamu.");
+    showConfirm("Apakah Anda yakin ingin menghapus tamu ini?", async () => {
+      try {
+        const res = await fetch(`/api/admin/guests/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          setGuests(prev => prev.filter(g => g._id !== id));
+          showToast("Tamu berhasil dihapus.", "success");
+        } else {
+          showToast("Gagal menghapus tamu.", "error");
+        }
+      } catch (error) {
+        console.error(error);
+        showToast("Terjadi kesalahan saat menghapus.", "error");
       }
-    } catch (error) {
-      console.error(error);
-    }
+    });
   };
 
   const formatPhoneNumber = (phone: string) => {
@@ -558,7 +586,7 @@ export default function AdminDashboard() {
     const origin = window.location.origin;
     const inviteLink = `${origin}/to:${encodeURIComponent(name)}`;
     navigator.clipboard.writeText(inviteLink);
-    alert("Link undangan berhasil disalin!");
+    showToast("Link undangan berhasil disalin! 📋", "success");
   };
 
   // Wishes/RSVP export
@@ -2577,6 +2605,56 @@ export default function AdminDashboard() {
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs transition font-bold shadow"
               >
                 Ya, Keluar Sesi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TOAST NOTIFICATION STACK ── */}
+      <div className="fixed bottom-6 right-6 z-[200] flex flex-col-reverse gap-3 pointer-events-none">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl border text-sm font-medium backdrop-blur-md
+              animate-[slideInRight_0.35s_ease-out]
+              ${toast.type === "success"
+                ? "bg-emerald-950/90 border-emerald-700/60 text-emerald-300"
+                : toast.type === "error"
+                  ? "bg-red-950/90 border-red-700/60 text-red-300"
+                  : "bg-neutral-900/90 border-neutral-700/60 text-neutral-200"
+              }`}
+          >
+            <span className="text-lg">
+              {toast.type === "success" ? "✅" : toast.type === "error" ? "❌" : "ℹ️"}
+            </span>
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── CUSTOM CONFIRM MODAL ── */}
+      {confirmModal?.open && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div className="px-6 py-5">
+              <p className="text-white text-sm leading-relaxed">{confirmModal.message}</p>
+            </div>
+            <div className="border-t border-neutral-800 px-6 py-4 flex justify-end gap-x-3">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-5 py-2 border border-neutral-700 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-lg text-xs transition font-semibold"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  confirmModal.onConfirm();
+                  setConfirmModal(null);
+                }}
+                className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs transition font-bold shadow"
+              >
+                Ya, Hapus
               </button>
             </div>
           </div>

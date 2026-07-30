@@ -1,11 +1,10 @@
 [
   {
-    "_id": "json_1785117829276",
-    "name": "Benlevav & Maria Noti",
-    "phone": "082199695819",
-    "status": "Terkirim",
-    "createdAt": "2026-07-27T02:03:49.276Z",
-    "updatedAt": "2026-07-27T02:04:23.650Z",
-    "sentAt": "2026-07-27T02:04:22.555Z"
+    "_id": "json_1785405682246",
+    "name": "tia & ojan",
+    "phone": "",
+    "status": "Belum Dikirim",
+    "createdAt": "2026-07-30T10:01:22.246Z",
+    "updatedAt": "2026-07-30T10:01:22.246Z"
   }
 ]
