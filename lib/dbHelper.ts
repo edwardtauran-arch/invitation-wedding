@@ -321,14 +321,29 @@ export async function updateDynamicGuest(id: string, guestData: any) {
 }
 
 export async function deleteDynamicGuest(id: string) {
+  let guestName = "";
   if (!id.startsWith("json_")) {
     try {
+      // Get guest name before deleting
+      const { data: guestData } = await supabase
+        .from("guests")
+        .select("name")
+        .eq("id", id)
+        .single();
+      if (guestData) guestName = guestData.name;
+
       const { error } = await supabase
         .from("guests")
         .delete()
         .eq("id", id);
 
-      if (!error) return { _id: id };
+      if (!error) {
+        if (guestName) {
+          // Cascade delete to wishes
+          await supabase.from("wishes").delete().eq("name", guestName);
+        }
+        return { _id: id };
+      }
     } catch (err) {
       console.warn("Supabase delete guest failed, using file fallback.", err);
     }
@@ -340,8 +355,24 @@ export async function deleteDynamicGuest(id: string) {
   try {
     const fileData = await fs.readFile(filePath, "utf-8");
     let guests = JSON.parse(fileData);
+    
+    const guestToDelete = guests.find((g: any) => g._id === id);
+    if (guestToDelete) guestName = guestToDelete.name;
+
     const filtered = guests.filter((g: any) => g._id !== id);
     await safeWriteFile(filePath, JSON.stringify(filtered, null, 2));
+
+    if (guestName) {
+      // Cascade delete to wishes JSON
+      const wishesPath = path.join(DATA_DIR, "wishes.json");
+      try {
+        const wishesData = await fs.readFile(wishesPath, "utf-8");
+        let wishes = JSON.parse(wishesData);
+        wishes = wishes.filter((w: any) => w.name !== guestName);
+        await safeWriteFile(wishesPath, JSON.stringify(wishes, null, 2));
+      } catch (e) {}
+    }
+
     return { _id: id };
   } catch (e) {}
   return null;
@@ -353,10 +384,25 @@ export async function deleteDynamicGuestBulk(ids: string[]) {
 
   if (supabaseIds.length > 0) {
     try {
+      // Get guest names before deleting
+      const { data: guestsData } = await supabase
+        .from("guests")
+        .select("name")
+        .in("id", supabaseIds);
+      const guestNames = guestsData?.map(g => g.name) || [];
+
       await supabase
         .from("guests")
         .delete()
         .in("id", supabaseIds);
+
+      if (guestNames.length > 0) {
+        // Cascade delete to wishes
+        await supabase
+          .from("wishes")
+          .delete()
+          .in("name", guestNames);
+      }
     } catch (err) {
       console.warn("Supabase bulk delete guest failed.", err);
     }
@@ -369,8 +415,22 @@ export async function deleteDynamicGuestBulk(ids: string[]) {
     try {
       const fileData = await fs.readFile(filePath, "utf-8");
       let guests = JSON.parse(fileData);
+      
+      const guestNames = guests.filter((g: any) => jsonIds.includes(g._id)).map((g: any) => g.name);
+
       const filtered = guests.filter((g: any) => !jsonIds.includes(g._id));
       await safeWriteFile(filePath, JSON.stringify(filtered, null, 2));
+
+      if (guestNames.length > 0) {
+        // Cascade delete to wishes JSON
+        const wishesPath = path.join(DATA_DIR, "wishes.json");
+        try {
+          const wishesData = await fs.readFile(wishesPath, "utf-8");
+          let wishes = JSON.parse(wishesData);
+          wishes = wishes.filter((w: any) => !guestNames.includes(w.name));
+          await safeWriteFile(wishesPath, JSON.stringify(wishes, null, 2));
+        } catch (e) {}
+      }
     } catch (e) {}
   }
   return { deleted: true };
