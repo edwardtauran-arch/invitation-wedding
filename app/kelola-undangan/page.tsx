@@ -145,6 +145,40 @@ export default function AdminDashboard() {
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
   const [currentEditingGuest, setCurrentEditingGuest] = useState<Partial<Guest> | null>(null);
 
+  // Bulk Add Guest Modal state
+  const [isBulkGuestModalOpen, setIsBulkGuestModalOpen] = useState(false);
+  const [bulkGuestText, setBulkGuestText] = useState("");
+  const [isSavingBulk, setIsSavingBulk] = useState(false);
+
+  const handleSaveBulkGuests = async () => {
+    if (!bulkGuestText.trim()) return;
+    setIsSavingBulk(true);
+    const names = bulkGuestText.split("\n").map(n => n.trim()).filter(n => n.length > 0);
+    let successCount = 0;
+    
+    try {
+      for (const name of names) {
+        const res = await fetch("/api/admin/guests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phone: "" }),
+        });
+        if (res.ok) successCount++;
+      }
+      
+      showToast(`${successCount} tamu berhasil ditambahkan!`, "success");
+      setBulkGuestText("");
+      setIsBulkGuestModalOpen(false);
+      fetchInitialData(true);
+    } catch (error) {
+      console.error(error);
+      showToast("Terjadi kesalahan saat menambahkan tamu bulk.", "error");
+    } finally {
+      setIsSavingBulk(false);
+    }
+  };
+
+
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -2192,6 +2226,16 @@ export default function AdminDashboard() {
                   <FaPlus />
                   <span>Tambah Tamu</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setBulkGuestText("");
+                    setIsBulkGuestModalOpen(true);
+                  }}
+                  className="flex items-center gap-x-2 bg-neutral-800 text-white hover:bg-neutral-700 border border-neutral-600 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                >
+                  <FaPlus />
+                  <span>Tambah Banyak (Bulk)</span>
+                </button>
                 {selectedGuests.length > 0 && (
                   <button
                     onClick={handleBulkDeleteGuests}
@@ -2683,6 +2727,60 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* BULK GUEST ADD MODAL */}
+      {isBulkGuestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="border-b border-neutral-800 px-6 py-4 flex items-center justify-between">
+              <h3 className="font-ovo text-base text-white uppercase tracking-wider">
+                Tambah Banyak Tamu (Bulk)
+              </h3>
+              <button
+                onClick={() => setIsBulkGuestModalOpen(false)}
+                className="text-neutral-500 hover:text-white transition text-lg"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wide">Daftar Nama Tamu</label>
+                <p className="text-[11px] text-neutral-500 mb-2 leading-relaxed">
+                  Masukkan nama tamu, pisahkan setiap nama dengan enter (baris baru). Contoh:<br/>
+                  Steven Mandey & Sheryl Karnoto<br/>
+                  Amanda Rumenser & Brian
+                </p>
+                <textarea
+                  value={bulkGuestText}
+                  onChange={(e) => setBulkGuestText(e.target.value)}
+                  className="w-full h-48 bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition text-sm font-legan resize-none"
+                  placeholder="Steven Mandey & Sheryl Karnoto&#10;Amanda Rumenser & Brian&#10;Reyvaldi Manulang & Gaileen"
+                ></textarea>
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-800 px-6 py-4 flex justify-end gap-x-2">
+              <button
+                onClick={() => setIsBulkGuestModalOpen(false)}
+                className="px-4 py-2 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-lg text-xs transition font-semibold"
+                disabled={isSavingBulk}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveBulkGuests}
+                disabled={isSavingBulk}
+                className="px-4 py-2 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs transition font-bold shadow disabled:opacity-50"
+              >
+                {isSavingBulk ? "Menyimpan..." : "Simpan Semua"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SAVE SETTINGS CONFIRMATION MODAL */}
       {isSaveModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
