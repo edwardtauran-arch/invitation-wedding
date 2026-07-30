@@ -2,27 +2,27 @@ import mongoose, { Schema, models } from "mongoose";
 
 const settingsSchema = new Schema(
   {
-    coupleNames: { type: String, default: "Mikha & Clara" },
-    eventDate: { type: String, default: "2024-12-21T00:00:00" },
+    coupleNames: { type: String, default: "EDWARD & DIAN" },
+    eventDate: { type: String, default: "2026-10-11T15:15:00" },
     
     // Groom Details
-    groom: { type: String, default: "Mikha Satria Sihotang" },
-    groomNickName: { type: String, default: "Mikha" },
-    groomInstagram: { type: String, default: "mikhasatria" },
-    groomBio: { type: String, default: "" },
+    groom: { type: String, default: "Edward Ridley Tauran" },
+    groomNickName: { type: String, default: "Edward" },
+    groomInstagram: { type: String, default: "tompel98" },
+    groomBio: { type: String, default: "Anak Pertama dari Pasangan Bpk. Jeffri P. Tauran & Ibu D. Erny Tauran/P" },
     groomTitleFront: { type: String, default: "" },
     groomTitleBack: { type: String, default: "" },
 
     // Bride Details
-    bride: { type: String, default: "Clara Sagala" },
-    brideNickName: { type: String, default: "Clara" },
-    brideInstagram: { type: String, default: "clarasagala" },
-    brideBio: { type: String, default: "" },
+    bride: { type: String, default: "Mardianti Ekaputri P" },
+    brideNickName: { type: String, default: "Dian" },
+    brideInstagram: { type: String, default: "dianpangandaheng" },
+    brideBio: { type: String, default: "Anak Pertama dari Pasangan Bpk. Ronny Pangandaheng & Agus Sulistiani" },
     brideTitleFront: { type: String, default: "" },
     brideTitleBack: { type: String, default: "" },
 
     // Bible Verse Slide
-    bibleVerse: { type: String, default: "Eccelestians 4:9-12" },
+    bibleVerse: { type: String, default: "KOLOSE 3:23" },
     bibleVerseContent: { type: String, default: "" },
 
     // Timeline Slide
