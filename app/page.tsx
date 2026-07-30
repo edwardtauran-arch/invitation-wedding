@@ -24,8 +24,10 @@ export default function Home() {
 
     // Fetch dynamic settings and validate guest
     const initializeApp = async () => {
-      let isGuestValid = true;
-      if (toParam && !isPreview) {
+      let isGuestValid = false;
+      if (isPreview) {
+        isGuestValid = true;
+      } else if (toParam) {
         const decodedName = decodeURIComponent(toParam).trim();
         setName(decodedName);
         try {
@@ -39,6 +41,8 @@ export default function Home() {
         } catch (error) {
           isGuestValid = false;
         }
+      } else {
+        isGuestValid = false;
       }
 
       setGuestStatus(isGuestValid ? "valid" : "invalid");
