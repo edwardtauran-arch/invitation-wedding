@@ -1,33 +1,43 @@
 import mongoose from "mongoose";
 
-let isConnecting = false;
+// Menggunakan pattern caching global untuk mencegah race condition di Vercel (Serverless)
+// di mana banyak request datang bersamaan.
+let cached = (global as any).mongoose;
+
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
 
 const connectToDatabase = async () => {
-  // If already connected, do nothing
-  if (mongoose.connection.readyState === 1) {
+  if (cached.conn) {
     return true;
   }
+
+  const uri = process.env.MONGODB_URI as string;
   
-  if (isConnecting) return false;
-  isConnecting = true;
+  if (!uri || uri.includes("#YOUR_DB") || uri.includes("YOUR DB")) {
+    console.error("MONGODB_URI is not set correctly!");
+    return false;
+  }
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000, // Beri waktu lebih untuk Vercel Cold Start
+      connectTimeoutMS: 10000,
+    }).then((mongoose) => {
+      console.log("Connected to MongoDB successfully.");
+      return mongoose;
+    }).catch((error) => {
+      console.error("Failed to connect to MongoDB:", error);
+      cached.promise = null; // Reset promise on failure
+      throw error;
+    });
+  }
 
   try {
-    const uri = process.env.MONGODB_URI as string;
-    if (!uri || uri.includes("#YOUR_DB") || uri.includes("YOUR DB")) {
-      throw new Error("MONGODB_URI is not set or contains default placeholder.");
-    }
-    
-    // Set 2 seconds connection timeout so it doesn't hang if offline
-    await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2000,
-      connectTimeoutMS: 2000,
-    });
-    console.log("Connected to MongoDB successfully.");
-    isConnecting = false;
+    cached.conn = await cached.promise;
     return true;
-  } catch (error) {
-    console.warn("Failed to connect to MongoDB:", (error as Error).message);
-    isConnecting = false;
+  } catch (e) {
     return false;
   }
 };
