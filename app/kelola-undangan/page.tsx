@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { 
   FaSave, FaPlus, FaTrash, FaWhatsapp, FaCopy, FaEdit, 
   FaMusic, FaImage, FaUsers, FaComments, FaCogs, FaCheckCircle, 
-  FaInfoCircle, FaFileCsv, FaEye, FaHourglassHalf, FaExternalLinkAlt,
+  FaInfoCircle, FaFileCsv, FaEye, FaEyeSlash, FaHourglassHalf, FaExternalLinkAlt,
   FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars
 } from "react-icons/fa";
 
@@ -118,6 +118,7 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -651,14 +652,23 @@ export default function AdminDashboard() {
           <form onSubmit={handleLoginSubmit} className="space-y-6">
             <div>
               <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Kata Sandi (Password)</label>
-              <input
-                type="password"
-                required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white transition-all text-sm tracking-widest text-center font-mono"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 pr-10 text-white focus:outline-none focus:border-white transition-all text-sm tracking-widest text-center font-mono"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-white transition"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
               {loginError && (
                 <p className="text-red-400 text-xs mt-2 text-center bg-red-950/20 border border-red-900/20 py-1.5 rounded-lg font-mono">
                   {loginError}
