@@ -35,14 +35,25 @@ export default function Home() {
           if (validRes.ok) {
             const validData = await validRes.json();
             isGuestValid = validData.valid;
-          } else {
-            isGuestValid = false;
           }
         } catch (error) {
-          isGuestValid = false;
+          // handle error
         }
-      } else {
-        isGuestValid = false;
+      }
+
+      if (!isGuestValid && !isPreview) {
+        try {
+          const authRes = await fetch("/api/admin/check-auth");
+          if (authRes.ok) {
+            const authData = await authRes.json();
+            if (authData.authenticated) {
+              isGuestValid = true;
+              if (!toParam) setName("Admin");
+            }
+          }
+        } catch (error) {
+          // ignore
+        }
       }
 
       setGuestStatus(isGuestValid ? "valid" : "invalid");
