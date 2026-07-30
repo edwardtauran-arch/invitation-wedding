@@ -127,6 +127,11 @@ export default function AdminDashboard() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [wishes, setWishes] = useState<Wish[]>([]);
   
+  // Bulk selection states
+  const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
+  const [selectedRsvps, setSelectedRsvps] = useState<string[]>([]);
+  const [selectedWishes, setSelectedWishes] = useState<string[]>([]);
+  
   const [activeTab, setActiveTab] = useState<"settings" | "guests" | "rsvp" | "wishes">("settings");
   
   // Settings tab sub-sections
@@ -542,6 +547,52 @@ export default function AdminDashboard() {
       } catch (error) {
         console.error(error);
         showToast("Terjadi kesalahan saat menghapus.", "error");
+      }
+    });
+  };
+
+  const handleBulkDeleteGuests = async () => {
+    if (selectedGuests.length === 0) return;
+    showConfirm(`Apakah Anda yakin ingin menghapus ${selectedGuests.length} tamu?`, async () => {
+      try {
+        const res = await fetch("/api/admin/guests/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: selectedGuests }),
+        });
+        if (res.ok) {
+          setGuests(prev => prev.filter(g => !selectedGuests.includes(g._id)));
+          setSelectedGuests([]);
+          showToast(`${selectedGuests.length} tamu berhasil dihapus.`, "success");
+        } else {
+          showToast("Gagal menghapus tamu.", "error");
+        }
+      } catch (error) {
+        console.error(error);
+        showToast("Terjadi kesalahan saat menghapus massal.", "error");
+      }
+    });
+  };
+
+  const handleBulkDeleteWishes = async (ids: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>) => {
+    if (ids.length === 0) return;
+    showConfirm(`Apakah Anda yakin ingin menghapus ${ids.length} data?`, async () => {
+      try {
+        const res = await fetch("/api/admin/wishes/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        });
+        if (res.ok) {
+          setWishes(prev => prev.filter(w => !ids.includes(w._id)));
+          setSelection([]);
+          showToast(`${ids.length} data berhasil dihapus.`, "success");
+        } else {
+          showToast("Gagal menghapus data.", "error");
+        }
+      } catch (error) {
+        console.error(error);
+        showToast("Terjadi kesalahan saat menghapus massal.", "error");
       }
     });
   };
@@ -2141,6 +2192,15 @@ export default function AdminDashboard() {
                   <FaPlus />
                   <span>Tambah Tamu</span>
                 </button>
+                {selectedGuests.length > 0 && (
+                  <button
+                    onClick={handleBulkDeleteGuests}
+                    className="flex items-center gap-x-2 bg-red-950/40 text-red-400 hover:bg-red-900/40 border border-red-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                  >
+                    <FaTrash className="w-4 h-4" />
+                    <span>Hapus {selectedGuests.length} Data</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2190,6 +2250,20 @@ export default function AdminDashboard() {
                 <table className="w-full border-collapse text-left text-sm">
                   <thead>
                     <tr className="border-b border-neutral-800 bg-neutral-950/40 text-neutral-400 font-semibold">
+                      <th className="px-6 py-4 w-12">
+                        <input
+                          type="checkbox"
+                          checked={filteredGuests.length > 0 && selectedGuests.length === filteredGuests.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedGuests(filteredGuests.map(g => g._id));
+                            } else {
+                              setSelectedGuests([]);
+                            }
+                          }}
+                          className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                        />
+                      </th>
                       <th className="px-6 py-4">Nama Tamu</th>
                       <th className="px-6 py-4">Nomor WhatsApp</th>
                       <th className="px-6 py-4">Link Undangan</th>
@@ -2200,7 +2274,7 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-neutral-800/60">
                     {filteredGuests.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-neutral-500 font-legan">
+                        <td colSpan={6} className="px-6 py-12 text-center text-neutral-500 font-legan">
                           Tidak ada data tamu yang cocok dengan filter atau pencarian.
                         </td>
                       </tr>
@@ -2209,6 +2283,20 @@ export default function AdminDashboard() {
                         const guestInviteUrl = `/?to=${encodeURIComponent(guest.name).replace(/%20/g, '+')}`;
                         return (
                           <tr key={guest._id} className="hover:bg-neutral-950/20 transition-all">
+                            <td className="px-6 py-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedGuests.includes(guest._id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedGuests(prev => [...prev, guest._id]);
+                                  } else {
+                                    setSelectedGuests(prev => prev.filter(id => id !== guest._id));
+                                  }
+                                }}
+                                className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                              />
+                            </td>
                             <td className="px-6 py-4 font-semibold text-white">{guest.name}</td>
                             <td className="px-6 py-4 text-neutral-300 font-mono">{guest.phone}</td>
                             <td className="px-6 py-4">
@@ -2319,6 +2407,15 @@ export default function AdminDashboard() {
                       <span>Ekspor Ke CSV</span>
                     </button>
                   )}
+                  {selectedRsvps.length > 0 && (
+                    <button
+                      onClick={() => handleBulkDeleteWishes(selectedRsvps, setSelectedRsvps)}
+                      className="flex items-center gap-x-2 bg-red-950/40 text-red-400 hover:bg-red-900/40 border border-red-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                      <span>Hapus {selectedRsvps.length} Data</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -2350,6 +2447,20 @@ export default function AdminDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-neutral-800 text-neutral-400 text-sm">
+                        <th className="pb-3 font-semibold w-12">
+                          <input
+                            type="checkbox"
+                            checked={wishes.length > 0 && selectedRsvps.length === wishes.length}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRsvps(wishes.map(w => w._id));
+                              } else {
+                                setSelectedRsvps([]);
+                              }
+                            }}
+                            className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                          />
+                        </th>
                         <th className="pb-3 font-semibold w-1/3">Nama</th>
                         <th className="pb-3 font-semibold">Kehadiran</th>
                         <th className="pb-3 font-semibold">Jumlah Tamu</th>
@@ -2359,11 +2470,25 @@ export default function AdminDashboard() {
                     <tbody className="divide-y divide-neutral-800/60 text-sm text-neutral-300">
                       {wishes.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="py-6 text-center text-neutral-500">Belum ada respon RSVP</td>
+                          <td colSpan={5} className="py-6 text-center text-neutral-500">Belum ada respon RSVP</td>
                         </tr>
                       ) : (
                         wishes.map((wish) => (
                           <tr key={`rsvp-${wish._id}`} className="hover:bg-neutral-800/20 transition-colors">
+                            <td className="py-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedRsvps.includes(wish._id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedRsvps(prev => [...prev, wish._id]);
+                                  } else {
+                                    setSelectedRsvps(prev => prev.filter(id => id !== wish._id));
+                                  }
+                                }}
+                                className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                              />
+                            </td>
                             <td className="py-3 font-medium text-white">{wish.name}</td>
                             <td className="py-3">
                               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -2417,11 +2542,11 @@ export default function AdminDashboard() {
                   </button>
                   {wishes.length > 0 && (
                     <button
-                      onClick={handleClearWishes}
+                      onClick={selectedWishes.length > 0 ? () => handleBulkDeleteWishes(selectedWishes, setSelectedWishes) : handleClearWishes}
                       className="flex items-center gap-x-2 bg-red-950/40 text-red-400 hover:bg-red-900/40 border border-red-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
                     >
                       <FaTrash className="w-4 h-4" />
-                      <span className="hidden md:inline">Hapus Semua</span>
+                      <span className="hidden md:inline">{selectedWishes.length > 0 ? `Hapus ${selectedWishes.length} Data` : "Hapus Semua"}</span>
                     </button>
                   )}
                 </div>
@@ -2429,22 +2554,54 @@ export default function AdminDashboard() {
 
               {/* Wishes list */}
               <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md p-6">
+                <div className="mb-4 flex items-center">
+                  <label className="flex items-center gap-x-2 text-sm text-neutral-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={wishes.filter(w => w.message && w.message.trim() !== "").length > 0 && selectedWishes.length === wishes.filter(w => w.message && w.message.trim() !== "").length}
+                      onChange={(e) => {
+                        const validWishes = wishes.filter(w => w.message && w.message.trim() !== "");
+                        if (e.target.checked) {
+                          setSelectedWishes(validWishes.map(w => w._id));
+                        } else {
+                          setSelectedWishes([]);
+                        }
+                      }}
+                      className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                    />
+                    <span>Pilih Semua Ucapan</span>
+                  </label>
+                </div>
                 <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 divide-y divide-neutral-800/60">
                   {wishes.filter(w => w.message && w.message.trim() !== "").length === 0 ? (
                     <p className="text-neutral-500 text-center py-10">Belum ada ucapan yang masuk.</p>
                   ) : (
                     wishes.filter(w => w.message && w.message.trim() !== "").map((wish, index) => (
-                      <div key={wish._id} className={`pt-4 ${index === 0 ? "pt-0" : ""} flex flex-col md:flex-row md:items-center justify-between gap-4`}>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-x-2">
-                            <strong className="text-white text-sm">{wish.name}</strong>
-                          </div>
+                      <div key={wish._id} className={`pt-4 ${index === 0 ? "pt-0" : ""} flex flex-col md:flex-row md:items-center justify-between gap-4 group`}>
+                        <div className="flex items-start gap-x-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedWishes.includes(wish._id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedWishes(prev => [...prev, wish._id]);
+                              } else {
+                                setSelectedWishes(prev => prev.filter(id => id !== wish._id));
+                              }
+                            }}
+                            className="mt-1 rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                          />
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-x-2">
+                              <strong className="text-white text-sm">{wish.name}</strong>
+                            </div>
                           <p className="text-xs text-neutral-400 font-mono">
                             {new Date(wish.createdAt).toLocaleString()}
                           </p>
                           <p className="text-sm text-neutral-300 italic pt-1">
                             &ldquo;{wish.message}&rdquo;
                           </p>
+                        </div>
                         </div>
                         <div className="shrink-0 flex items-center">
                           <button

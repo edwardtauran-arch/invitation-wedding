@@ -347,6 +347,35 @@ export async function deleteDynamicGuest(id: string) {
   return null;
 }
 
+export async function deleteDynamicGuestBulk(ids: string[]) {
+  const supabaseIds = ids.filter(id => !id.startsWith("json_"));
+  const jsonIds = ids.filter(id => id.startsWith("json_"));
+
+  if (supabaseIds.length > 0) {
+    try {
+      await supabase
+        .from("guests")
+        .delete()
+        .in("id", supabaseIds);
+    } catch (err) {
+      console.warn("Supabase bulk delete guest failed.", err);
+    }
+  }
+
+  // Fallback to JSON file
+  if (jsonIds.length > 0) {
+    await ensureDataDir();
+    const filePath = path.join(DATA_DIR, "guests.json");
+    try {
+      const fileData = await fs.readFile(filePath, "utf-8");
+      let guests = JSON.parse(fileData);
+      const filtered = guests.filter((g: any) => !jsonIds.includes(g._id));
+      await safeWriteFile(filePath, JSON.stringify(filtered, null, 2));
+    } catch (e) {}
+  }
+  return { deleted: true };
+}
+
 // ============ WISHES / RSVP ============
 
 export async function getDynamicWishes(page: number, limit: number) {
@@ -518,6 +547,35 @@ export async function deleteDynamicWish(id: string) {
     return { _id: id };
   } catch (e) {}
   return null;
+}
+
+export async function deleteDynamicWishBulk(ids: string[]) {
+  const supabaseIds = ids.filter(id => !id.startsWith("json_"));
+  const jsonIds = ids.filter(id => id.startsWith("json_"));
+
+  if (supabaseIds.length > 0) {
+    try {
+      await supabase
+        .from("wishes")
+        .delete()
+        .in("id", supabaseIds);
+    } catch (err) {
+      console.warn("Supabase bulk delete wish failed.", err);
+    }
+  }
+
+  // Fallback to JSON file
+  if (jsonIds.length > 0) {
+    await ensureDataDir();
+    const filePath = path.join(DATA_DIR, "wishes.json");
+    try {
+      const fileData = await fs.readFile(filePath, "utf-8");
+      let wishes = JSON.parse(fileData);
+      wishes = wishes.filter((w: any) => !jsonIds.includes(w._id));
+      await safeWriteFile(filePath, JSON.stringify(wishes, null, 2));
+    } catch (e) {}
+  }
+  return { deleted: true };
 }
 
 export async function clearDynamicWishes() {
