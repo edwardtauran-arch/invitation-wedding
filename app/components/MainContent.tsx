@@ -694,11 +694,11 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
                     }`}
                 >
                   {/* Title Header */}
-                  <div className="text-center shrink-0">
-                    <h2 className="font-thesignature text-4xl md:text-5xl text-white leading-none mb-1">
+                  <div className="text-center shrink-0 bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 mx-auto w-fit max-w-[90%] md:max-w-2xl mb-4">
+                    <h2 className="font-thesignature text-4xl md:text-6xl text-white leading-none mb-3">
                       Wedding Gift
                     </h2>
-                    <p className="text-[9px] md:text-[11px] font-legan text-white/85 max-w-[280px] md:max-w-md mx-auto leading-relaxed italic">
+                    <p className="text-xs md:text-sm font-legan text-white/90 max-w-[280px] md:max-w-md mx-auto leading-relaxed italic">
                       &ldquo;Doa Restu Anda merupakan karunia yang sangat berarti bagi kami. Dan jika memberi adalah ungkapan tanda kasih Anda, Anda dapat memberi kado secara cashless.&rdquo;
                     </p>
                   </div>
