@@ -9,13 +9,11 @@ export default function Home() {
   const [name, setName] = useState<string>("");
   const [settings, setSettings] = useState<any>(null);
   const [guestStatus, setGuestStatus] = useState<"checking" | "valid" | "invalid">("checking");
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   useEffect(() => {
     // Check if loaded inside live preview iframe to skip ScreenStart timer
     const urlParams = new URLSearchParams(window.location.search);
     const isPreview = urlParams.get("preview") === "true";
-    setIsPreviewMode(isPreview);
     if (isPreview) {
       setShowContent(true);
     }
