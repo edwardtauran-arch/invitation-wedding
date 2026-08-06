@@ -5,59 +5,60 @@ interface FormProps {
 }
 
 const Form = ({ guestName }: FormProps) => {
-  const [loading, setLoading] = useState(false);
   const [attendance, setAttendance] = useState("Hadir");
   const [guests, setGuests] = useState("1");
+  const [submitted, setSubmitted] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
 
     const form = e.currentTarget;
-    if (!form) {
-      setLoading(false);
-      return;
-    }
+    if (!form) return;
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(form);
     const data = {
-      name: guestName || formData.get("name"),
-      attendance: attendance,
+      name: guestName || (formData.get("name") as string),
+      attendance,
       guests: attendance === "Tidak Hadir" ? "0" : guests,
-      message: formData.get("message") || "",
+      message: message,
     };
-
 
     if (!data.name) {
       alert("Name is required!");
-      setLoading(false); 
       return;
     }
 
-    try {
-      const response = await fetch("/api/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
+    // ✅ Optimistic: langsung tampil sukses & reset form tanpa nunggu server
+    const optimisticWish = {
+      _id: `pending_${Date.now()}`,
+      name: data.name,
+      attendance: data.attendance,
+      guests: Number(data.guests),
+      message: data.message,
+      createdAt: new Date().toISOString(),
+    };
 
-      if (response.ok) {
-        // Reset the form if submission is successful
-        form.reset();
-        setAttendance("Hadir");
-        setGuests("1");
-        alert("Ucapan berhasil dikirim!");
-      } else {
-        alert("Gagal mengirim ucapan");
-      }
-    } catch (error) {
-      console.error("Fetch error:", error);
-      alert("Terjadi kesalahan jaringan.");
-    } finally {
-      setLoading(false); // Pastikan selalu di-reset
-    }
+    // Dispatch event ke WishesList untuk tampil langsung
+    window.dispatchEvent(
+      new CustomEvent("wishSubmitted", { detail: optimisticWish })
+    );
+
+    // Reset form langsung
+    setMessage("");
+    setAttendance("Hadir");
+    setGuests("1");
+    setSubmitted(true);
+    setTimeout(() => setSubmitted(false), 3000);
+
+    // Fire-and-forget ke server di background
+    fetch("/api/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).catch(() => {
+      // Silent fail — data masih tampil optimistically
+    });
   };
 
   return (
@@ -120,17 +121,17 @@ const Form = ({ guestName }: FormProps) => {
           </select>
         )}
       </div>
+
       <div>
-        <label
-          htmlFor="message"
-          className="block text-sm font-medium text-white"
-        >
+        <label htmlFor="message" className="block text-sm font-medium text-white">
           Ucapan
         </label>
         <textarea
           id="message"
           name="message"
           rows={4}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           className="block w-full p-2 mt-1 bg-white/10 text-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         />
       </div>
@@ -138,10 +139,13 @@ const Form = ({ guestName }: FormProps) => {
       <div>
         <button
           type="submit"
-          className="block w-full p-2 text-sm font-medium text-center text-black bg-white border border-transparent rounded-md shadow-sm"
-          disabled={loading} 
+          className={`block w-full p-2 text-sm font-medium text-center rounded-md shadow-sm transition-colors duration-300 ${
+            submitted
+              ? "bg-green-500 text-white border border-green-500"
+              : "text-black bg-white border border-transparent"
+          }`}
         >
-          {loading ? "Submitting..." : "Submit"} 
+          {submitted ? "✓ Ucapan Terkirim!" : "Submit"}
         </button>
       </div>
     </form>
