@@ -582,6 +582,66 @@ export async function createDynamicWish(wishData: any) {
   return newWish;
 }
 
+// Hapus pesan ucapan saja, RSVP (kehadiran) tetap tersimpan
+export async function clearWishMessage(id: string) {
+  if (!id.startsWith("json_")) {
+    try {
+      const { data, error } = await supabase
+        .from("wishes")
+        .update({ message: "", updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select()
+        .single();
+      if (!error && data) return { _id: data.id };
+    } catch (err) {
+      console.warn("Supabase clear wish message failed.", err);
+    }
+  }
+
+  // Fallback JSON: kosongkan message
+  await ensureDataDir();
+  const filePath = path.join(DATA_DIR, "wishes.json");
+  try {
+    const fileData = await fs.readFile(filePath, "utf-8");
+    const wishes = JSON.parse(fileData);
+    const index = wishes.findIndex((w: any) => w._id === id);
+    if (index !== -1) {
+      wishes[index].message = "";
+      await safeWriteFile(filePath, JSON.stringify(wishes, null, 2));
+      return { _id: id };
+    }
+  } catch (e) {}
+  return null;
+}
+
+export async function clearWishMessageBulk(ids: string[]) {
+  const supabaseIds = ids.filter((id) => !id.startsWith("json_"));
+  const jsonIds = ids.filter((id) => id.startsWith("json_"));
+
+  if (supabaseIds.length > 0) {
+    try {
+      await supabase
+        .from("wishes")
+        .update({ message: "", updated_at: new Date().toISOString() })
+        .in("id", supabaseIds);
+    } catch (err) {
+      console.warn("Supabase bulk clear wish message failed.", err);
+    }
+  }
+
+  if (jsonIds.length > 0) {
+    await ensureDataDir();
+    const filePath = path.join(DATA_DIR, "wishes.json");
+    try {
+      const fileData = await fs.readFile(filePath, "utf-8");
+      const wishes = JSON.parse(fileData);
+      wishes.forEach((w: any) => { if (jsonIds.includes(w._id)) w.message = ""; });
+      await safeWriteFile(filePath, JSON.stringify(wishes, null, 2));
+    } catch (e) {}
+  }
+  return { cleared: true };
+}
+
 export async function deleteDynamicWish(id: string) {
   if (!id.startsWith("json_")) {
     try {
