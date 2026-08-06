@@ -44,21 +44,6 @@ export default function Home({ params: { slug } }: ParamsProps) {
         }
       }
 
-      // Fallback: cek apakah admin yang mengakses
-      if (!isGuestValid && !isPreview) {
-        try {
-          const authRes = await fetch("/api/admin/check-auth");
-          if (authRes.ok) {
-            const authData = await authRes.json();
-            if (authData.authenticated) {
-              isGuestValid = true;
-            }
-          }
-        } catch (error) {
-          // ignore
-        }
-      }
-
       setGuestStatus(isGuestValid ? "valid" : "invalid");
 
       // Fetch settings
