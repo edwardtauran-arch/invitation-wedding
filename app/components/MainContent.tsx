@@ -320,13 +320,14 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
               </h5>
             </div>
             <div>
-              <p className="mt-5 text-lg uppercase font-xs tracking-widest text-white">
+              <p className="mt-5 text-lg uppercase font-xs tracking-widest text-white" translate="no">
                 {name ? `Dear ${name},` : "Welcome"}
               </p>
               {!isOpen ? (
                 <button
                   className="animate-bounce  mt-5 px-5 py-1 uppercase text-xs border border-white hover:text-white hover:bg-transparent rounded-full bg-white text-black transition"
                   onClick={handleOpen}
+                  translate="no"
                 >
                   Open Invitation
                 </button>
