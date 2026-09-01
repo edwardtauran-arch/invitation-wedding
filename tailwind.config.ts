@@ -13,6 +13,7 @@ const config: Config = {
         legan: ["var(--font-legan)", "serif"],
         wonder: ["var(--font-wonder)", "sans-serif"],
         thesignature: ["var(--font-thesignature)", "serif"],
+        dancing: ["var(--font-dancing)", "cursive"],
       },
       colors: {
         background: "var(--background)",

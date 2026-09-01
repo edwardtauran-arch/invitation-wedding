@@ -392,7 +392,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                 <p className="text-sm mt-5 font-legan">
                   {config.bibleVerseContent}
                 </p>
-                <p className="text-6xl mt-5 font-wonder">{toTitleCase(config.coupleNames)}</p>
+                <p className="text-6xl mt-5 font-dancing">{toTitleCase(config.coupleNames)}</p>
               </div>
             </div>
             {/* Slide 2 */}
@@ -414,7 +414,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                 <h1 className="text-3xl md:text-5xl text-white font-ovo mt-1 mb-2">
                   {formatNameWithTitle(config.groomTitleFront, config.groom, config.groomTitleBack)}
                 </h1>
-                <h3 className="font-thesignature text-3xl md:text-4xl">About {config.groomNickName},</h3>
+                <h3 className="font-dancing text-3xl md:text-4xl">About {config.groomNickName},</h3>
                 <p className="text-base md:text-lg mt-5 font-legan text-[#CCCCCC] leading-relaxed max-w-lg">
                   {config.groomBio}
                 </p>
@@ -444,7 +444,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                 <h1 className="text-3xl md:text-5xl text-white font-ovo mt-1 mb-2">
                   {formatNameWithTitle(config.brideTitleFront, config.bride, config.brideTitleBack)}
                 </h1>
-                <h3 className="font-thesignature text-3xl md:text-4xl">About {config.brideNickName},</h3>
+                <h3 className="font-dancing text-3xl md:text-4xl">About {config.brideNickName},</h3>
                 <p className="text-base md:text-lg mt-5 font-legan text-[#CCCCCC] leading-relaxed max-w-lg">
                   {config.brideBio}
                 </p>
@@ -507,7 +507,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                     }`}
                 >
                   <hr className="w-[120px] mx-2 border-t border-gray-300" />
-                  <span className="px-2 font-thesignature text-3xl">
+                  <span className="px-2 font-dancing text-3xl">
                     {toTitleCase(config.coupleNames)}
                   </span>
                 </div>
@@ -667,7 +667,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                   </div>
 
                   <div className="-mt-12 w-72 transform skew-x-6 drop-shadow">
-                    <p className="text-3xl font-thesignature text-white/80 ">
+                    <p className="text-3xl font-dancing text-white/80 ">
                       {config.prewedding.detail}
                     </p>
                   </div>
@@ -725,7 +725,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             >
               {/* Header Banner */}
               <div className="text-center mb-4 py-2 bg-[#F2EAE1] rounded-xl shadow-sm border border-[#E6DCD0] shrink-0 max-w-sm mx-auto w-full">
-                <h2 className="font-thesignature text-4xl md:text-5xl text-[#4A3B32] leading-none">
+                <h2 className="font-dancing text-4xl md:text-5xl text-[#4A3B32] leading-none">
                   Galeri Foto
                 </h2>
               </div>
@@ -776,7 +776,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                 >
                   {/* Title Header */}
                   <div className="text-center shrink-0 bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 mx-auto w-fit max-w-[90%] md:max-w-2xl mb-4">
-                    <h2 className="font-thesignature text-4xl md:text-6xl text-white leading-none mb-3">
+                    <h2 className="font-dancing text-4xl md:text-6xl text-white leading-none mb-3">
                       Wedding Gift
                     </h2>
                     <p className="text-xs md:text-sm font-legan text-white/90 max-w-[280px] md:max-w-md mx-auto leading-relaxed italic">

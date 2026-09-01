@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Ovo } from "next/font/google";
+import { Ovo, Dancing_Script } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { config } from "@/lib/config";
@@ -29,6 +29,12 @@ const ovo = Ovo({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-ovo",
+});
+
+const dancingScript = Dancing_Script({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-dancing",
 });
 
 export async function generateMetadata() {
@@ -85,7 +91,7 @@ export default function RootLayout({
         <meta name="google" content="notranslate" />
       </head>
       <body
-        className={`bg-[#0a0a0a]  ${ovo.variable} ${thesignature.variable} ${wonder.variable} ${legan.variable}  antialiased`}
+        className={`bg-[#0a0a0a]  ${ovo.variable} ${thesignature.variable} ${wonder.variable} ${legan.variable} ${dancingScript.variable}  antialiased`}
       >
         {children}
       </body>
