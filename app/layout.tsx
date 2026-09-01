@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Ovo, Dancing_Script } from "next/font/google";
+import { Ovo, Ms_Madi } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { config } from "@/lib/config";
@@ -31,8 +31,8 @@ const ovo = Ovo({
   variable: "--font-ovo",
 });
 
-const dancingScript = Dancing_Script({
-  weight: ["400", "500", "600", "700"],
+const dancingScript = Ms_Madi({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-dancing",
 });
