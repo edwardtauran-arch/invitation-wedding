@@ -25,9 +25,10 @@ const DEFAULT_GALLERY_IMAGES = [
 type WeddingScreenProps = {
   name?: string;
   config?: any;
+  isPreview?: boolean;
 };
 
-const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
+const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: WeddingScreenProps) => {
   const config = dynamicConfig || defaultConfig;
 
   const galleryImages = config.galleryImages || DEFAULT_GALLERY_IMAGES;
@@ -93,7 +94,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
   };
 
   const [fadeClass, setFadeClass] = useState("opacity-0");
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(isPreview);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isQrisEnlarged, setIsQrisEnlarged] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -154,7 +155,33 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "SCROLL_TO_SECTION" && event.data.section) {
+        const sectionId = `section-${event.data.section}`;
+        
+        const doScroll = () => {
+          const el = document.getElementById(sectionId);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            return true;
+          }
+          return false;
+        };
+
+        // If section not found, auto-open the invitation first then retry
+        if (!doScroll()) {
+          setIsOpen(true);
+          setTimeout(doScroll, 300);
+        }
+      }
+    };
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("message", handleMessage);
+    };
   }, [lightboxIndex, galleryImages.length]);
 
   // Untuk fade-in pertama kali
@@ -236,6 +263,10 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
   const { ref: endRef, inView: isEndInView } = useInView({
     threshold: 0.5,
   });
+  const { ref: dresscodeRef, inView: isDresscodeInView } = useInView({
+    threshold: 0.1,
+    rootMargin: "0px 0px -5% 0px",
+  });
 
   useEffect(() => {
     const video = document.querySelector("iframe");
@@ -271,7 +302,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
       {/* Konten teks sisi kanan bisa scroll untuk pc */}
       <div className=" md:w-1/3 h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth">
         <div
-          id="backgroundWedding"
+          id="section-general"
           className=" snap-start relative w-full h-screen flex items-center justify-center overflow-hidden"
         >
           {/* Background Images Slideshow */}
@@ -366,6 +397,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
             </div>
             {/* Slide 2 */}
             <div
+              id="section-groomBride"
               className={`text-white h-screen flex items-end pb-16 px-12 snap-start `}
               style={{
                 backgroundImage: `url(${config.slideImages?.slide2 || "/slide_2.jpg"})`,
@@ -427,6 +459,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
             </div>
             {/* Slide 4 */}
             <div
+              id="section-loveJourney"
               className="snap-start  text-white h-screen pt-8 flex px-12 "
               style={{
                 backgroundImage: `url(${config.slideImages?.slide4 || "/slide_4.jpg"})`,
@@ -482,6 +515,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
             </div>
             {/* Slide 5 & 6 Merged (Save Our Date & Countdown) */}
             <div
+              id="section-events"
               className="snap-start text-white h-screen flex flex-col items-center justify-center px-4 md:px-12 py-16 overflow-y-auto"
               style={{
                 backgroundImage: `url(${config.slideImages?.slide5 || "/slide_5.jpg"})`,
@@ -561,7 +595,8 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
             {/* Slide 7 */}
             {config.livestreaming.enabled && (
               <div
-                className="snap-start  text-white h-screen flex flex-col justify-between pt-16 pb-32 px-12 "
+                id="section-livestreaming"
+                className={`dresscode-blur-above dresscode-dim-overlay snap-start text-white h-screen flex flex-col justify-between pt-16 pb-32 px-12 ${isDresscodeInView ? 'dresscode-blur-active dresscode-dim-active' : ''}`}
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide6 || "/slide_6.jpg"})`,
                   backgroundSize: "cover",
@@ -639,10 +674,54 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
                 </div>
               </div>)}
 
+            {/* BANNER DRESSCODE */}
+            {(config.dresscode?.enabled ?? false) && (
+              <div
+                id="section-dresscode"
+                className="snap-center relative text-white flex flex-col justify-center items-center py-16 px-8 overflow-hidden"
+                style={{
+                  minHeight: "50vh",
+                  backgroundImage: `url(${config.dresscode?.image || "/dresscode_batik.jpg"})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/55 pointer-events-none" />
+
+                <div
+                  ref={dresscodeRef}
+                  className="relative z-10 flex flex-col items-center text-center max-w-xl w-full px-4"
+                  style={{
+                    opacity: isDresscodeInView ? 1 : 0,
+                    transform: isDresscodeInView ? 'translateY(0)' : 'translateY(16px)',
+                    transition: 'opacity 1.2s ease-out, transform 1.2s ease-out',
+                  }}
+                >
+                  <h1 className="font-ovo text-3xl md:text-4xl text-white mb-4 leading-tight uppercase tracking-widest">
+                    {config.dresscode?.title || "Dresscode"}
+                  </h1>
+                  <div className="w-16 h-px bg-white/50 mb-6" />
+                  <p className="font-legan text-sm md:text-base text-white/90 leading-relaxed whitespace-pre-wrap">
+                    {(() => {
+                      const text = config.dresscode?.text || "";
+                      return text.split("**").map((part: string, i: number) => {
+                        if (i % 2 === 1) {
+                          return <strong key={i} className="font-bold text-white">{part}</strong>;
+                        }
+                        return <span key={i}>{part}</span>;
+                      });
+                    })()}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* GALERI FOTO SLIDE */}
             <div
+              id="section-media"
               ref={galleryRef}
-              className="snap-start bg-[#FAF6F0] h-screen flex flex-col justify-center pt-8 pb-4 px-4 md:px-6 overflow-hidden"
+              className={`dresscode-blur-below dresscode-dim-overlay snap-start bg-[#FAF6F0] h-screen flex flex-col justify-center pt-8 pb-4 px-4 md:px-6 overflow-hidden ${isDresscodeInView ? 'dresscode-blur-active dresscode-dim-active' : ''}`}
             >
               {/* Header Banner */}
               <div className="text-center mb-4 py-2 bg-[#F2EAE1] rounded-xl shadow-sm border border-[#E6DCD0] shrink-0 max-w-sm mx-auto w-full">
@@ -682,6 +761,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
             {/* SLIDE HADIAH / WEDDING GIFT */}
             {(config.weddingGift?.enabled ?? true) && (
               <div
+                id="section-weddingGift"
                 className="snap-start text-neutral-800 bg-[#FAF6F0] h-screen flex flex-col justify-start md:justify-center pt-12 md:pt-8 pb-4 px-4 overflow-hidden"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide8 || "/slide_8.jpg"})`,
@@ -856,6 +936,7 @@ const WeddingScreen = ({ name, config: dynamicConfig }: WeddingScreenProps) => {
 
             {/* SLIDE AKHIR */}
             <div
+              id="section-penutup"
               className="snap-start text-white h-screen flex flex-col justify-end pt-16 pb-16 px-12 "
               style={{
                 backgroundImage: `url(${config.slideImages?.slide10 || "/slide_10.jpg"})`,

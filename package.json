@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@next/font": "^14.2.10",
     "@supabase/supabase-js": "^2.111.0",
     "mongodb": "^6.21.0",
     "mongoose": "^8.6.2",

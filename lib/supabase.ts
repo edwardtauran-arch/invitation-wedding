@@ -5,10 +5,20 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || supabaseServiceKey;
 
 // Use service_role key for server-side operations (bypasses RLS)
-export const supabase = createClient(supabaseUrl, supabaseServiceKey || "placeholder");
+export const supabase = createClient(supabaseUrl, supabaseServiceKey || "placeholder", {
+  auth: { persistSession: false },
+  global: {
+    fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }),
+  },
+});
 
 // For client-side (anon key, respects RLS)
 export const supabaseAnon = createClient(
   supabaseUrl,
-  supabaseAnonKey || "placeholder"
+  supabaseAnonKey || "placeholder",
+  {
+    global: {
+      fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }),
+    },
+  }
 );

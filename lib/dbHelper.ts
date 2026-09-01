@@ -30,7 +30,7 @@ function getDefaultSettings() {
     bride: "Mardianti Ekaputri P",
     brideNickName: "Dian",
     brideInstagram: "dianpangandaheng",
-    brideBio: "Anak Pertama dari Pasangan Bpk. Ronny Pangandaheng & Agus Sulistiani",
+    brideBio: "Anak Pertama dari Pasangan Bpk. Ronny Pangandaheng & Ibu Agus Sulistiani",
     brideTitleFront: "",
     brideTitleBack: "",
     bibleVerse: "KOLOSE 3:23",
@@ -112,6 +112,12 @@ function getDefaultSettings() {
         { bankName: "BRI", accountNumber: "0000 0000 000", accountHolderName: "Edward Ridley Tauran" },
         { bankName: "BCA", accountNumber: "0000 0000 000", accountHolderName: "Mardianti Ekaputri P" },
       ],
+    },
+    dresscode: {
+      enabled: false,
+      title: "Dresscode",
+      text: "",
+      image: "",
     },
   };
 }

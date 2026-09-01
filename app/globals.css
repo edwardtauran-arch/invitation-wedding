@@ -125,3 +125,66 @@ body {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+/* Gradient blur overlay for sections adjacent to Dresscode banner */
+.dresscode-blur-above,
+.dresscode-blur-below {
+  position: relative;
+  overflow: hidden;
+}
+
+.dresscode-blur-above::after,
+.dresscode-blur-below::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.8s ease;
+}
+
+/* Section ABOVE dresscode: blur gets thicker at the BOTTOM edge */
+.dresscode-blur-above::after {
+  bottom: 0;
+  background: transparent;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.7) 70%, black 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.7) 70%, black 100%);
+  opacity: 0;
+}
+
+/* Section BELOW dresscode: blur gets thicker at the TOP edge */
+.dresscode-blur-below::before {
+  top: 0;
+  background: transparent;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.7) 70%, black 100%);
+  mask-image: linear-gradient(to top, transparent 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.7) 70%, black 100%);
+  opacity: 0;
+}
+
+.dresscode-blur-active.dresscode-blur-above::after,
+.dresscode-blur-active.dresscode-blur-below::before {
+  opacity: 1;
+}
+
+/* Fade overlay dimming */
+.dresscode-dim-overlay {
+  position: relative;
+}
+.dresscode-dim-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  pointer-events: none;
+  z-index: 19;
+  transition: background 0.8s ease;
+}
+.dresscode-dim-active.dresscode-dim-overlay::after {
+  background: rgba(0,0,0,0.25);
+}

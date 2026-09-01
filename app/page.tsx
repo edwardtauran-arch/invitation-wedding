@@ -10,10 +10,13 @@ export default function Home() {
   const [settings, setSettings] = useState<any>(null);
   const [guestStatus, setGuestStatus] = useState<"checking" | "valid" | "invalid">("checking");
 
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
   useEffect(() => {
     // Check if loaded inside live preview iframe to skip ScreenStart timer
     const urlParams = new URLSearchParams(window.location.search);
     const isPreview = urlParams.get("preview") === "true";
+    setIsPreviewMode(isPreview);
     if (isPreview) {
       setShowContent(true);
     }
@@ -37,16 +40,15 @@ export default function Home() {
         } catch (error) {
           // handle error
         }
-      }
-
-      if (!isGuestValid && !isPreview) {
+      } else {
+        // Only allow admin bypass if no toParam is provided
         try {
           const authRes = await fetch("/api/admin/check-auth");
           if (authRes.ok) {
             const authData = await authRes.json();
             if (authData.authenticated) {
               isGuestValid = true;
-              if (!toParam) setName("Admin");
+              setName("Admin");
             }
           }
         } catch (error) {
@@ -122,8 +124,8 @@ export default function Home() {
 
   return (
     <div className="h-screen">
-      <ScreenStart config={settings} />
-      {showContent && <MainContent name={name} config={settings} />}
+      {!isPreviewMode && <ScreenStart config={settings} />}
+      {showContent && <MainContent name={name} config={settings} isPreview={isPreviewMode} />}
     </div>
   );
 }
