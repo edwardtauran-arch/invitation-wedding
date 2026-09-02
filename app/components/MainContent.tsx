@@ -493,7 +493,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                       </h3>
                       <p
                         ref={slide4Ref}
-                        className={`text-xs font-legan text-white fadeInLeftSlow ${isSlide4InView ? " active" : ""
+                        className={`text-xs font-legan text-white fadeInLeftSlow whitespace-pre-line ${isSlide4InView ? " active" : ""
                           }`}
                       >
                         {content}
@@ -588,7 +588,16 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                   ALMOST TIME FOR OUR CELEBRATION
                 </h1>
                 <div className="scale-75 md:scale-100">
-                  <CountdownTimer eventDate={config.eventDate} />
+                  <CountdownTimer eventDate={(() => {
+                    // Gabungkan tanggal dari eventDate + jam start Holy Matrimony
+                    const dateOnly = config.eventDate ? config.eventDate.substring(0, 10) : "";
+                    // Format holyMatrimony.time: "09.30 - 14.00" → ambil bagian sebelum " - "
+                    const rawTime = config.holyMatrimony?.time || "00:00";
+                    const startPart = rawTime.split("-")[0].trim(); // "09.30"
+                    const match = startPart.match(/(\d{1,2})[.:](\d{2})/);
+                    const timeOnly = match ? `${match[1].padStart(2, "0")}:${match[2]}` : "00:00";
+                    return dateOnly ? `${dateOnly}T${timeOnly}:00` : config.eventDate;
+                  })()} />
                 </div>
               </div>
             </div>
@@ -937,16 +946,19 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             {/* SLIDE AKHIR */}
             <div
               id="section-penutup"
-              className="snap-start text-white h-screen flex flex-col justify-end pt-16 pb-16 px-12 "
+              className="snap-start text-white h-screen flex flex-col px-12 pt-16 pb-16"
               style={{
                 backgroundImage: `url(${config.slideImages?.slide10 || "/slide_10.jpg"})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
               }}
             >
+              {/* Kotak transparan — posisi atas/bawah dikontrol mt-auto */}
               <div
                 ref={endRef}
-                className={` ${isEndInView ? "active" : ""} fadeInMove bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 w-fit h-fit mx-auto`}
+                className={`fadeInMove ${isEndInView ? "active" : ""} bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 w-fit h-fit mx-auto ${
+                  (config.closingBoxPosition ?? "bottom") === "bottom" ? "mt-auto" : ""
+                }`}
               >
                 <h1 className="text-3xl text-white  font-ovo text-center uppercase">
                   {config.thankyou}
@@ -962,7 +974,10 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                 </div>
               </div>
 
-              <footer className="flex flex-col items-center mt-8">
+              {/* Footer selalu di bawah */}
+              <footer className={`flex flex-col items-center ${
+                (config.closingBoxPosition ?? "bottom") === "top" ? "mt-auto" : "mt-8"
+              }`}>
                 <p className="text-xs text-neutral-500 tracking-wider">
                   Crafted with Love
                 </p>

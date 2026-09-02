@@ -10,7 +10,7 @@
   "bride": "Mardianti Ekaputri P",
   "brideNickName": "Dian",
   "brideInstagram": "dianpangandaheng",
-  "brideBio": "Anak Pertama dari Pasangan Bpk. Ronny Pangandaheng & Agus Sulistiani",
+  "brideBio": "Anak Pertama dari Pasangan Bpk. Ronny Pangandaheng & Ibu Agus Sulistiani",
   "brideTitleFront": "",
   "brideTitleBack": "",
   "bibleVerse": "KOLOSE 3:23",
@@ -99,5 +99,11 @@
         "accountHolderName": "Mardianti Ekaputri P"
       }
     ]
+  },
+  "dresscode": {
+    "enabled": true,
+    "title": "Dresscode",
+    "text": "You are encouraged to **wear colorful berkain & berkebaya nusantara** (no white please). But please don't feel obliged, your comfort matters most",
+    "image": "/dresscode_batik.jpg"
   }
 }

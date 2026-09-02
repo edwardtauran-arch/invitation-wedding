@@ -77,6 +77,7 @@ function getDefaultSettings() {
     },
     thankyou: "Thank You For Your attendance",
     thankyouDetail: "",
+    closingBoxPosition: "bottom",
     musicPath: "/music/wedding_song.mp3",
     galleryImages: [
       "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80",

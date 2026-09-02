@@ -5,7 +5,7 @@ import {
   FaSave, FaPlus, FaTrash, FaWhatsapp, FaCopy, FaEdit,
   FaMusic, FaImage, FaUsers, FaComments, FaCogs, FaCheckCircle,
   FaInfoCircle, FaFileCsv, FaEye, FaEyeSlash, FaHourglassHalf, FaExternalLinkAlt,
-  FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars
+  FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars, FaImages
 } from "react-icons/fa";
 
 interface Settings {
@@ -68,6 +68,7 @@ interface Settings {
   };
   thankyou: string;
   thankyouDetail: string;
+  closingBoxPosition?: "top" | "bottom";
   musicPath: string;
   slideImages: {
     slide1: string;
@@ -192,6 +193,7 @@ export default function AdminDashboard() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isEditNavOpen, setIsEditNavOpen] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   // Toast notification system
   const [toasts, setToasts] = useState<{ id: number; message: string; type: "success" | "error" | "info" }[]>([]);
@@ -438,12 +440,52 @@ export default function AdminDashboard() {
     });
   };
 
+  // Kompres gambar di client sebelum upload: max 1200px, JPEG quality 0.75
+  const compressImage = (file: File, maxPx = 1200, quality = 0.75): Promise<File> => {
+    return new Promise((resolve) => {
+      // Jika bukan gambar, langsung return
+      if (!file.type.startsWith("image/")) { resolve(file); return; }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width <= maxPx && height <= maxPx) {
+          // Sudah kecil, tetap kompres ke JPEG
+        }
+        const scale = Math.min(1, maxPx / Math.max(width, height));
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return; }
+            const compressed = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+            resolve(compressed);
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, path: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Kompres jika gambar (bukan musik)
+    const isImage = file.type.startsWith("image/");
+    const fileToUpload = isImage ? await compressImage(file) : file;
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileToUpload);
 
     try {
       const res = await fetch("/api/admin/upload", {
@@ -495,8 +537,10 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // QRIS tidak perlu resize agresif, kompres ringan (max 800px, q 0.85)
+    const fileToUpload = await compressImage(file, 800, 0.85);
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileToUpload);
 
     try {
       const res = await fetch("/api/admin/upload", {
@@ -540,8 +584,10 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Kompres galeri: max 1000px, JPEG 0.75
+    const fileToUpload = await compressImage(file, 1000, 0.75);
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", fileToUpload);
 
     try {
       const res = await fetch("/api/admin/upload", {
@@ -894,6 +940,33 @@ export default function AdminDashboard() {
 
             <span className="w-[1px] h-6 bg-neutral-800 mx-2"></span>
 
+            {/* TOMBOL KOMPRES FOTO LAMA */}
+            <button
+              onClick={async () => {
+                setIsCompressing(true);
+                try {
+                  const res = await fetch("/api/admin/compress-images", { method: "POST" });
+                  const data = await res.json();
+                  if (data.success) {
+                    showToast(`✅ Kompres selesai: ${data.summary.compressed} foto dikompres, ${data.summary.skipped} dilewati.`, "success");
+                    fetchInitialData(true); // reload settings
+                  } else {
+                    showToast(data.error || "Gagal kompres foto.", "error");
+                  }
+                } catch (e) {
+                  showToast("Error saat kompres foto.", "error");
+                } finally {
+                  setIsCompressing(false);
+                }
+              }}
+              disabled={isCompressing}
+              className="flex items-center gap-x-2 px-4 py-2 rounded-lg text-sm text-neutral-400 hover:text-white hover:bg-neutral-900 transition-all duration-300 border border-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Kompres semua foto lama agar loading lebih cepat"
+            >
+              <FaImages className={`w-4 h-4 ${isCompressing ? "animate-pulse" : ""}`} />
+              <span>{isCompressing ? "Mengompres..." : "Kompres Foto"}</span>
+            </button>
+
             <a
               href="/"
               target="_blank"
@@ -1042,7 +1115,7 @@ export default function AdminDashboard() {
                   <div className="flex flex-col">
                     <span className="text-[10px] text-neutral-400 uppercase tracking-widest block font-bold">Navigasi Edit</span>
                     <span className="text-sm font-semibold text-white uppercase tracking-wider mt-0.5">
-                      {settingsSection === "general" && "Umum & Tanggal"}
+                      {settingsSection === "general" && "Informasi Umum"}
                       {settingsSection === "groomBride" && "Mempelai (Groom & Bride)"}
                       {settingsSection === "loveJourney" && "Kisah Cinta (Love Journey)"}
                       {settingsSection === "events" && "Jadwal Acara & Maps"}
@@ -1097,7 +1170,7 @@ export default function AdminDashboard() {
                           : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
                           }`}
                       >
-                        Umum &amp; Tanggal
+                        Informasi Umum
                       </button>
                       <button
                         onClick={() => {
@@ -1224,7 +1297,7 @@ export default function AdminDashboard() {
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
                       }`}
                   >
-                    Umum &amp; Tanggal
+                    Informasi Umum
                   </button>
                   <button
                     onClick={() => setSettingsSection("groomBride")}
@@ -1319,39 +1392,16 @@ export default function AdminDashboard() {
                     {/* SECTION: GENERAL */}
                     {settingsSection === "general" && (
                       <div className="space-y-6">
-                        <h2 className="text-xl font-ovo border-b border-neutral-800 pb-3 text-white uppercase tracking-wider">Informasi Umum & Tanggal</h2>
+                        <h2 className="text-xl font-ovo border-b border-neutral-800 pb-3 text-white uppercase tracking-wider">Informasi Umum</h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Nama Pasangan (Main Title)</label>
-                            <input
-                              type="text"
-                              value={settings.coupleNames}
-                              onChange={(e) => handleUpdateField("coupleNames", e.target.value)}
-                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white transition-all text-sm"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Tanggal Pernikahan (Format Countdown)</label>
-                            <div className="relative">
-                              <input
-                                type="datetime-local"
-                                value={settings.eventDate ? settings.eventDate.substring(0, 16) : ""}
-                                onChange={(e) => handleUpdateField("eventDate", e.target.value)}
-                                onClick={(e) => {
-                                  try {
-                                    (e.target as any).showPicker();
-                                  } catch (err) { }
-                                }}
-                                style={{ colorScheme: "dark" }}
-                                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-white transition-all text-sm cursor-pointer"
-                              />
-                              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-                                <FaCalendarAlt className="w-4 h-4" />
-                              </div>
-                            </div>
-                          </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Nama Pasangan (Main Title)</label>
+                          <input
+                            type="text"
+                            value={settings.coupleNames}
+                            onChange={(e) => handleUpdateField("coupleNames", e.target.value)}
+                            className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white transition-all text-sm"
+                          />
                         </div>
 
                         <div className="border-t border-neutral-800/60 pt-6 space-y-4">
@@ -1631,6 +1681,38 @@ export default function AdminDashboard() {
                               placeholder="Contoh: Tetap doakan kami ya Saudara/i..."
                             />
                           </div>
+
+                          {/* POSISI KOTAK */}
+                          <div>
+                            <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Posisi Kotak Teks</label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateField("closingBoxPosition", "top")}
+                                className={`flex flex-col items-center gap-y-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
+                                  (settings.closingBoxPosition ?? "bottom") === "top"
+                                    ? "bg-white text-black border-white shadow-md"
+                                    : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white"
+                                }`}
+                              >
+                                <span className="text-lg">⬆</span>
+                                <span>Atas</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateField("closingBoxPosition", "bottom")}
+                                className={`flex flex-col items-center gap-y-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
+                                  (settings.closingBoxPosition ?? "bottom") === "bottom"
+                                    ? "bg-white text-black border-white shadow-md"
+                                    : "bg-neutral-950 text-neutral-400 border-neutral-800 hover:border-neutral-600 hover:text-white"
+                                }`}
+                              >
+                                <span className="text-lg">⬇</span>
+                                <span>Bawah</span>
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-neutral-500 mt-2">Atur posisi kotak teks agar foto tidak tertutup.</p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1638,7 +1720,32 @@ export default function AdminDashboard() {
                     {/* SECTION: EVENTS & MAPS */}
                     {settingsSection === "events" && (
                       <div className="space-y-8">
-                        <h2 className="text-xl font-ovo border-b border-neutral-800 pb-3 text-white uppercase tracking-wider">Jadwal Acara & Maps</h2>
+                        <h2 className="text-xl font-ovo border-b border-neutral-800 pb-3 text-white uppercase tracking-wider">Jadwal Acara &amp; Maps</h2>
+
+                        {/* TANGGAL PERNIKAHAN */}
+                        <div className="p-4 bg-neutral-950/40 border border-neutral-800/40 rounded-xl space-y-3">
+                          <h3 className="text-sm font-semibold uppercase text-neutral-300 flex items-center gap-x-2">
+                            <FaCalendarAlt className="w-3.5 h-3.5 text-neutral-400" /> Tanggal Pernikahan
+                          </h3>
+                          <div className="relative">
+                            <input
+                              type="date"
+                              value={settings.eventDate ? settings.eventDate.substring(0, 10) : ""}
+                              onChange={(e) => handleUpdateField("eventDate", e.target.value + "T00:00:00")}
+                              onClick={(e) => {
+                                try {
+                                  (e.target as any).showPicker();
+                                } catch (err) { }
+                              }}
+                              style={{ colorScheme: "dark" }}
+                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-white transition-all text-sm cursor-pointer"
+                            />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                              <FaCalendarAlt className="w-4 h-4" />
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-neutral-500">⏱ Countdown otomatis mengikuti tanggal ini + jam start Holy Matrimony.</p>
+                        </div>
 
                         {/* HOLY MATRIMONY */}
                         <div className="space-y-4">
@@ -2389,10 +2496,6 @@ export default function AdminDashboard() {
                                   <span className="text-neutral-600 text-xs">Belum ada gambar</span>
                                 </div>
                               )}
-                            </div>
-                            <div className="bg-neutral-950/50 border border-neutral-800/40 rounded-lg p-3 text-xs text-neutral-400 mb-3">
-                              <p className="font-semibold text-neutral-300 mb-1">📐 Ukuran optimal: <span className="text-white font-mono">720 × 1280 px</span> (rasio 9:16 portrait)</p>
-                              <p>Gambar akan di-crop otomatis agar memenuhi layar secara penuh. Gunakan foto portrait/vertikal untuk hasil terbaik.</p>
                             </div>
                             <input
                               type="file"
