@@ -128,6 +128,17 @@ export default function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState("");
+
+  // 15-Minute Session Timer & Re-Auth Modal states
+  const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
+  const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
+  const [hasWarnedModalOpened, setHasWarnedModalOpened] = useState(false);
+  const [extendPassword, setExtendPassword] = useState("");
+  const [showExtendPassword, setShowExtendPassword] = useState(false);
+  const [isExtendingSession, setIsExtendingSession] = useState(false);
+  const [extendError, setExtendError] = useState("");
 
   // App data states
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -185,7 +196,6 @@ export default function AdminDashboard() {
     }
   };
 
-
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -211,6 +221,91 @@ export default function AdminDashboard() {
   const showConfirm = (message: string, onConfirm: () => void) => {
     setConfirmModal({ open: true, message, onConfirm });
   };
+
+  const formatSessionTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const handleAutoLogout = useCallback(async (reason = "Sesi login Anda telah berakhir (15 menit). Silakan masukkan kata sandi kembali.") => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    setIsAuthenticated(false);
+    setSessionExpiresAt(null);
+    setRemainingSeconds(0);
+    setIsExtendModalOpen(false);
+    setExtendPassword("");
+    setExtendError("");
+    setHasWarnedModalOpened(false);
+    setSettings(null);
+    setGuests([]);
+    setWishes([]);
+    setSessionExpiredNotice(reason);
+  }, []);
+
+  const handleExtendSession = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!extendPassword.trim()) {
+      setExtendError("Masukkan kata sandi untuk memperpanjang sesi.");
+      return;
+    }
+    setExtendError("");
+    setIsExtendingSession(true);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: extendPassword }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const exp = data.expiresAt || (Date.now() + 15 * 60 * 1000);
+        setSessionExpiresAt(exp);
+        const secs = Math.max(0, Math.floor((exp - Date.now()) / 1000));
+        setRemainingSeconds(secs);
+        setHasWarnedModalOpened(false);
+        setExtendPassword("");
+        setIsExtendModalOpen(false);
+        showToast("✅ Sesi berhasil diperpanjang 15 menit!", "success");
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setExtendError(errData.error || "Kata sandi salah! Silakan coba lagi.");
+      }
+    } catch (err) {
+      setExtendError("Gagal terhubung ke server.");
+    } finally {
+      setIsExtendingSession(false);
+    }
+  };
+
+  // Active session interval timer (1s ticker)
+  useEffect(() => {
+    if (!isAuthenticated || !sessionExpiresAt) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const diff = Math.max(0, Math.floor((sessionExpiresAt - now) / 1000));
+      setRemainingSeconds(diff);
+
+      // Auto popup warning modal when <= 120s (2 minutes) remain
+      if (diff <= 120 && diff > 0 && !hasWarnedModalOpened) {
+        setIsExtendModalOpen(true);
+        setHasWarnedModalOpened(true);
+      }
+
+      // Auto logout when session reaches 0
+      if (diff <= 0) {
+        clearInterval(interval);
+        handleAutoLogout("Sesi login Anda telah berakhir (15 menit). Silakan masukkan kata sandi kembali.");
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, sessionExpiresAt, hasWarnedModalOpened, handleAutoLogout]);
 
   useEffect(() => {
     checkAuth();
@@ -242,7 +337,17 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/admin/check-auth");
       if (res.ok) {
+        const data = await res.json();
         setIsAuthenticated(true);
+        if (data.expiresAt) {
+          setSessionExpiresAt(data.expiresAt);
+          const secs = Math.max(0, Math.floor((data.expiresAt - Date.now()) / 1000));
+          setRemainingSeconds(secs);
+        } else {
+          const exp = Date.now() + 15 * 60 * 1000;
+          setSessionExpiresAt(exp);
+          setRemainingSeconds(15 * 60);
+        }
         fetchInitialData(false);
       } else {
         setIsAuthenticated(false);
@@ -267,11 +372,24 @@ export default function AdminDashboard() {
         body: JSON.stringify({ password: loginPassword }),
       });
       if (res.ok) {
+        const data = await res.json();
         setIsAuthenticated(true);
+        setSessionExpiredNotice("");
+        setLoginPassword("");
+        if (data.expiresAt) {
+          setSessionExpiresAt(data.expiresAt);
+          const secs = Math.max(0, Math.floor((data.expiresAt - Date.now()) / 1000));
+          setRemainingSeconds(secs);
+        } else {
+          const exp = Date.now() + 15 * 60 * 1000;
+          setSessionExpiresAt(exp);
+          setRemainingSeconds(15 * 60);
+        }
+        setHasWarnedModalOpened(false);
         setLoading(true);
         fetchInitialData(false);
       } else {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         setLoginError(errData.error || "Password salah!");
       }
     } catch (err) {
@@ -286,9 +404,12 @@ export default function AdminDashboard() {
       const res = await fetch("/api/admin/logout", { method: "POST" });
       if (res.ok) {
         setIsAuthenticated(false);
+        setSessionExpiresAt(null);
+        setRemainingSeconds(0);
         setSettings(null);
         setGuests([]);
         setWishes([]);
+        setSessionExpiredNotice("");
         window.location.reload();
       }
     } catch (err) {
@@ -306,6 +427,10 @@ export default function AdminDashboard() {
     try {
       // 1. Fetch settings
       const settingsRes = await fetch("/api/admin/settings");
+      if (settingsRes.status === 401) {
+        handleAutoLogout("Sesi login Anda telah berakhir. Silakan login kembali.");
+        return;
+      }
       if (settingsRes.ok) {
         const settingsData = await settingsRes.json();
         // Ensure dresscode always has default values so handleUpdateField works correctly
@@ -324,6 +449,10 @@ export default function AdminDashboard() {
 
       // 2. Fetch guests
       const guestsRes = await fetch("/api/admin/guests");
+      if (guestsRes.status === 401) {
+        handleAutoLogout("Sesi login Anda telah berakhir. Silakan login kembali.");
+        return;
+      }
       if (guestsRes.ok) {
         const guestsData = await guestsRes.json();
         setGuests(guestsData);
@@ -820,6 +949,16 @@ export default function AdminDashboard() {
             <p className="text-xs text-neutral-400 tracking-wider">Silakan masukkan password untuk mengelola undangan pernikahan.</p>
           </div>
 
+          {sessionExpiredNotice && (
+            <div className="mb-6 p-3.5 rounded-xl bg-amber-950/40 border border-amber-600/50 text-amber-200 text-xs leading-relaxed text-center flex flex-col items-center gap-y-1 shadow-lg animate-fadeIn">
+              <div className="flex items-center gap-x-1.5 font-semibold text-amber-300">
+                <FaHourglassHalf className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span>Pemberitahuan Sesi</span>
+              </div>
+              <span>{sessionExpiredNotice}</span>
+            </div>
+          )}
+
           <form onSubmit={handleLoginSubmit} className="space-y-6">
             <div>
               <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Kata Sandi (Password)</label>
@@ -864,7 +1003,7 @@ export default function AdminDashboard() {
           </form>
 
           <div className="mt-8 text-center">
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest">Weddingly Security System</p>
+            <p className="text-[10px] text-neutral-500 uppercase tracking-widest">Weddingly Security System • 15 Menit Sesi</p>
           </div>
         </div>
       </div>
@@ -940,6 +1079,36 @@ export default function AdminDashboard() {
 
             <span className="w-[1px] h-6 bg-neutral-800 mx-2"></span>
 
+            {/* SESSION TIMER BADGE */}
+            <button
+              onClick={() => {
+                setExtendError("");
+                setExtendPassword("");
+                setIsExtendModalOpen(true);
+              }}
+              className={`flex items-center gap-x-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-300 border shadow-sm ${
+                remainingSeconds <= 120
+                  ? "bg-red-950/80 border-red-600/80 text-red-300 animate-pulse hover:bg-red-900/80"
+                  : remainingSeconds <= 300
+                  ? "bg-amber-950/60 border-amber-600/60 text-amber-300 hover:bg-amber-900/60"
+                  : "bg-neutral-900/80 border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700"
+              }`}
+              title="Sisa Waktu Sesi Login (Klik untuk perpanjang)"
+            >
+              <FaHourglassHalf
+                className={`w-3.5 h-3.5 ${
+                  remainingSeconds <= 120
+                    ? "text-red-400 animate-spin"
+                    : remainingSeconds <= 300
+                    ? "text-amber-400"
+                    : "text-emerald-400"
+                }`}
+              />
+              <span className="font-semibold">{formatSessionTime(remainingSeconds)}</span>
+            </button>
+
+            <span className="w-[1px] h-6 bg-neutral-800 mx-2"></span>
+
             {/* TOMBOL KOMPRES FOTO LAMA */}
             <button
               onClick={async () => {
@@ -990,7 +1159,26 @@ export default function AdminDashboard() {
           </nav>
 
           {/* Mobile Menu Button (Garis 3) */}
-          <div className="lg:hidden">
+          <div className="lg:hidden flex items-center gap-x-3">
+            {/* Mobile quick session timer indicator */}
+            <button
+              onClick={() => {
+                setExtendError("");
+                setExtendPassword("");
+                setIsExtendModalOpen(true);
+              }}
+              className={`flex items-center gap-x-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border ${
+                remainingSeconds <= 120
+                  ? "bg-red-950/80 border-red-600/80 text-red-300 animate-pulse"
+                  : remainingSeconds <= 300
+                  ? "bg-amber-950/60 border-amber-600/60 text-amber-300"
+                  : "bg-neutral-900/80 border-neutral-800 text-neutral-300"
+              }`}
+            >
+              <FaHourglassHalf className="w-3 h-3 text-amber-400" />
+              <span>{formatSessionTime(remainingSeconds)}</span>
+            </button>
+
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="text-neutral-400 hover:text-white p-2 rounded-lg focus:outline-none transition-all duration-200"
@@ -1008,10 +1196,41 @@ export default function AdminDashboard() {
         {/* Mobile Menu Dropdown */}
         <div
           className={`lg:hidden border-t border-neutral-800 bg-neutral-950/95 backdrop-blur-xl px-6 py-4 space-y-3 transition-all duration-300 ease-in-out origin-top overflow-hidden ${isMobileMenuOpen
-            ? "max-h-[500px] opacity-100 translate-y-0 visible"
+            ? "max-h-[550px] opacity-100 translate-y-0 visible"
             : "max-h-0 opacity-0 -translate-y-4 invisible"
             }`}
         >
+          {/* Mobile Session Timer */}
+          <button
+            onClick={() => {
+              setExtendError("");
+              setExtendPassword("");
+              setIsExtendModalOpen(true);
+              setIsMobileMenuOpen(false);
+            }}
+            className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-xs font-mono border transition-all ${
+              remainingSeconds <= 120
+                ? "bg-red-950/80 border-red-600/80 text-red-300 animate-pulse"
+                : remainingSeconds <= 300
+                ? "bg-amber-950/60 border-amber-600/60 text-amber-300"
+                : "bg-neutral-900/80 border-neutral-800 text-neutral-300 hover:text-white"
+            }`}
+          >
+            <span className="flex items-center gap-x-2">
+              <FaHourglassHalf
+                className={`w-3.5 h-3.5 ${
+                  remainingSeconds <= 120
+                    ? "text-red-400"
+                    : remainingSeconds <= 300
+                    ? "text-amber-400"
+                    : "text-emerald-400"
+                }`}
+              />
+              <span>Sisa Waktu Sesi:</span>
+            </span>
+            <span className="font-bold text-sm">{formatSessionTime(remainingSeconds)} (Perpanjang)</span>
+          </button>
+
           <button
             onClick={() => {
               setActiveTab("settings");
@@ -3230,6 +3449,134 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* SESSION WARNING & EXTEND RE-AUTHENTICATION MODAL */}
+      {isExtendModalOpen && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500 via-red-500 to-amber-500"></div>
+
+            {/* Header */}
+            <div className="border-b border-neutral-800 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <FaHourglassHalf className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-ovo text-sm text-white uppercase tracking-wider font-semibold">
+                    Pemberitahuan Sesi Berakhir
+                  </h3>
+                  <p className="text-[11px] text-neutral-400 font-mono">Keamanan Dashboard Admin</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsExtendModalOpen(false)}
+                className="text-neutral-500 hover:text-white transition text-lg"
+                title="Tutup (Tetap lanjut sampai batas waktu)"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              {/* Countdown Box */}
+              <div className="bg-neutral-950/80 border border-neutral-800 rounded-xl p-4 text-center space-y-1.5">
+                <p className="text-xs text-neutral-400 uppercase tracking-wider">Sisa Waktu Sesi Anda</p>
+                <div className="text-3xl font-mono font-bold text-white tracking-widest flex items-center justify-center gap-x-2">
+                  <span
+                    className={
+                      remainingSeconds <= 120
+                        ? "text-red-400 animate-pulse"
+                        : remainingSeconds <= 300
+                        ? "text-amber-400"
+                        : "text-emerald-400"
+                    }
+                  >
+                    {formatSessionTime(remainingSeconds)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  {remainingSeconds > 0
+                    ? "Dashboard akan otomatis logout jika waktu habis."
+                    : "Sesi telah habis, sistem sedang logout..."}
+                </p>
+              </div>
+
+              <p className="text-xs text-[#CCCCCC] leading-relaxed">
+                Sesi admin dibatasi 15 menit. Masukkan kata sandi admin untuk memperpanjang sesi Anda selama <strong>15 menit ke depan</strong> tanpa logout. Jika tidak diisi, dashboard akan otomatis logout saat waktu habis.
+              </p>
+
+              {/* Password Form */}
+              <form onSubmit={handleExtendSession} className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wide">
+                    Kata Sandi Admin
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showExtendPassword ? "text" : "password"}
+                      value={extendPassword}
+                      onChange={(e) => setExtendPassword(e.target.value)}
+                      placeholder="••••••••"
+                      autoFocus
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 pr-10 text-white focus:outline-none focus:border-white transition-all text-sm font-mono tracking-widest"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowExtendPassword(!showExtendPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-white transition"
+                    >
+                      {showExtendPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                  {extendError && (
+                    <p className="text-red-400 text-xs mt-1.5 bg-red-950/20 border border-red-900/20 py-1 px-2.5 rounded-lg font-mono">
+                      {extendError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="border-t border-neutral-800 pt-4 flex items-center justify-between gap-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsExtendModalOpen(false)}
+                    className="px-3.5 py-2 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-lg text-xs transition font-semibold"
+                  >
+                    Nanti Saja
+                  </button>
+                  <div className="flex items-center gap-x-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsExtendModalOpen(false);
+                        handleLogout();
+                      }}
+                      className="px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-950/30 rounded-lg text-xs transition font-medium"
+                    >
+                      Keluar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isExtendingSession || !extendPassword.trim()}
+                      className="px-4 py-2 bg-white text-black hover:bg-neutral-200 disabled:opacity-50 rounded-lg text-xs transition font-bold shadow flex items-center gap-x-1.5"
+                    >
+                      {isExtendingSession ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-t-black border-black/20 rounded-full animate-spin"></div>
+                          <span>Memverifikasi...</span>
+                        </>
+                      ) : (
+                        <span>Perpanjang (+15 Mnt)</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* LOGOUT CONFIRMATION MODAL */}
       {isLogoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">

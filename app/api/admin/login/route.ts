@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import { createSessionToken, SESSION_DURATION_SECONDS } from "@/lib/authHelper";
 
 export async function POST(req: Request) {
   try {
@@ -7,20 +7,23 @@ export async function POST(req: Request) {
     const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
 
     if (password === adminPassword) {
-      const response = NextResponse.json({ success: true });
-      
-      const signature = crypto.createHmac('sha256', adminPassword).update("authenticated").digest("hex");
-      const cookieValue = `authenticated.${signature}`;
-      
-      // Set an HTTP-only session cookie
+      const { cookieValue, expiresAt } = createSessionToken(adminPassword);
+
+      const response = NextResponse.json({
+        success: true,
+        expiresAt,
+        durationSeconds: SESSION_DURATION_SECONDS,
+      });
+
+      // Set an HTTP-only session cookie valid for 15 minutes (900 seconds)
       response.cookies.set("admin_session", cookieValue, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 1 week
+        maxAge: SESSION_DURATION_SECONDS,
       });
-      
+
       return response;
     } else {
       return NextResponse.json(
@@ -36,3 +39,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

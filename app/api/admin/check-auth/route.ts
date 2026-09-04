@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { isAuthorized } from "@/lib/authHelper";
-import { cookies } from "next/headers";
+import { getSessionInfo } from "@/lib/authHelper";
 
 export async function GET() {
   try {
-    if (isAuthorized()) {
-      return NextResponse.json({ authenticated: true });
+    const sessionInfo = getSessionInfo();
+    if (sessionInfo.authenticated) {
+      return NextResponse.json({
+        authenticated: true,
+        expiresAt: sessionInfo.expiresAt,
+        remainingSeconds: sessionInfo.remainingSeconds,
+      });
     } else {
       return NextResponse.json({ authenticated: false }, { status: 401 });
     }
@@ -13,4 +17,5 @@ export async function GET() {
     return NextResponse.json({ authenticated: false }, { status: 500 });
   }
 }
+
 

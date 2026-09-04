@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const guests = await getDynamicGuests();
     const normalizedQuery = name.toLowerCase().trim();
     
-    const isValid = guests.some(g => g.name.toLowerCase().trim() === normalizedQuery);
+    const isValid = guests.some((g: any) => g.name.toLowerCase().trim() === normalizedQuery);
     
     return NextResponse.json({ valid: isValid });
   } catch (error) {
