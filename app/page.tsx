@@ -76,6 +76,13 @@ export default function Home() {
       if (event.data && event.data.type === "UPDATE_PREVIEW") {
         setSettings(event.data.settings);
       }
+      if (event.data && event.data.type === "SCROLL_TO_SECTION") {
+        const sectionId = `section-${event.data.section}`;
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
     };
     window.addEventListener("message", handlePreviewMessage);
 

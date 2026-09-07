@@ -7,6 +7,7 @@ import {
   FaInfoCircle, FaFileCsv, FaEye, FaEyeSlash, FaHourglassHalf, FaExternalLinkAlt,
   FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars, FaImages
 } from "react-icons/fa";
+import { extractYoutubeId } from "@/lib/youtube";
 
 interface Settings {
   _id?: string;
@@ -153,7 +154,18 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"settings" | "guests" | "rsvp" | "wishes">("settings");
 
   // Settings tab sub-sections
-  const [settingsSection, setSettingsSection] = useState<"general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "dresscode" | "media" | "weddingGift" | "penutup" | "template">("general");
+  const [settingsSection, setSettingsSection] = useState<"general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "prewedding" | "dresscode" | "media" | "weddingGift" | "penutup" | "template">("general");
+
+  const handleSelectSection = useCallback((sec: "general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "prewedding" | "dresscode" | "media" | "weddingGift" | "penutup" | "template") => {
+    setSettingsSection(sec);
+    const iframe = document.getElementById("preview-iframe") as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: "SCROLL_TO_SECTION",
+        section: sec,
+      }, "*");
+    }
+  }, []);
 
   // Guest list filters and search
   const [guestSearch, setGuestSearch] = useState("");
@@ -852,6 +864,22 @@ export default function AdminDashboard() {
     return clean;
   };
 
+  const formatEventDateStr = (dateStr?: string) => {
+    if (!dateStr) return "Minggu, 11 Oktober 2026";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   const getWhatsAppLink = (guest: Guest) => {
     if (!settings) return "";
     const origin = window.location.origin;
@@ -860,6 +888,9 @@ export default function AdminDashboard() {
     let msg = settings.invitationTemplate || "";
     msg = msg.replace(/{nama}/g, guest.name);
     msg = msg.replace(/{link}/g, inviteLink);
+    msg = msg.replace(/{tanggal}/g, formatEventDateStr(settings.eventDate));
+    msg = msg.replace(/{tanggal_acara}/g, formatEventDateStr(settings.eventDate));
+    msg = msg.replace(/{hari_tanggal}/g, formatEventDateStr(settings.eventDate));
 
     return `https://api.whatsapp.com/send?phone=${formatPhoneNumber(guest.phone)}&text=${encodeURIComponent(msg)}`;
   };
@@ -1012,9 +1043,9 @@ export default function AdminDashboard() {
 
   // MAIN DASHBOARD (AUTHENTICATED)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 text-white pb-20 font-legan">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 text-white font-legan">
       {/* HEADER NAVBAR */}
-      <header className="border-b border-neutral-800/80 bg-neutral-950/60 backdrop-blur-xl sticky top-0 z-30">
+      <header className="border-b border-neutral-800/80 bg-neutral-950/60 backdrop-blur-xl sticky top-0 z-30 shrink-0 h-16">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-x-3">
             <div className="h-9 w-9 bg-white text-black font-bold flex items-center justify-center rounded-lg text-lg shadow-lg">
@@ -1317,7 +1348,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 mt-8">
+      <main className="max-w-7xl w-full mx-auto px-6 my-4 flex-1 lg:min-h-0 lg:overflow-hidden flex flex-col">
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
@@ -1328,7 +1359,7 @@ export default function AdminDashboard() {
           <>
             {/* TAB 1: SETTINGS / CUSTOMIZATION */}
             {activeTab === "settings" && settings && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:h-full lg:min-h-0 items-start lg:items-stretch flex-1">
                 {/* Mobile View Navigation Toggle for settingsSection */}
                 <div className="lg:hidden flex items-center justify-between bg-neutral-900/60 border border-neutral-800/80 p-4 rounded-xl backdrop-blur-md w-full">
                   <div className="flex flex-col">
@@ -1339,6 +1370,7 @@ export default function AdminDashboard() {
                       {settingsSection === "loveJourney" && "Kisah Cinta (Love Journey)"}
                       {settingsSection === "events" && "Jadwal Acara & Maps"}
                       {settingsSection === "livestreaming" && "Live Streaming"}
+                      {settingsSection === "prewedding" && "Video Prewedding"}
                       {settingsSection === "dresscode" && "Dresscode"}
                       {settingsSection === "media" && "Lagu & Foto (Media)"}
                       {settingsSection === "weddingGift" && "Hadiah / Amplop Digital"}
@@ -1381,7 +1413,7 @@ export default function AdminDashboard() {
                     <div className="flex-1 overflow-y-auto space-y-2">
                       <button
                         onClick={() => {
-                          setSettingsSection("general");
+                          handleSelectSection("general");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "general"
@@ -1393,7 +1425,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("groomBride");
+                          handleSelectSection("groomBride");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "groomBride"
@@ -1405,7 +1437,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("loveJourney");
+                          handleSelectSection("loveJourney");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "loveJourney"
@@ -1417,7 +1449,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("events");
+                          handleSelectSection("events");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "events"
@@ -1429,7 +1461,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("livestreaming");
+                          handleSelectSection("livestreaming");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "livestreaming"
@@ -1441,7 +1473,19 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("dresscode");
+                          handleSelectSection("prewedding");
+                          setIsEditNavOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "prewedding"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                          }`}
+                      >
+                        Video Prewedding
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleSelectSection("dresscode");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "dresscode"
@@ -1453,7 +1497,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("media");
+                          handleSelectSection("media");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "media"
@@ -1465,7 +1509,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("weddingGift");
+                          handleSelectSection("weddingGift");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "weddingGift"
@@ -1477,7 +1521,7 @@ export default function AdminDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setSettingsSection("penutup");
+                          handleSelectSection("penutup");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "penutup"
@@ -1492,7 +1536,7 @@ export default function AdminDashboard() {
 
                       <button
                         onClick={() => {
-                          setSettingsSection("template");
+                          handleSelectSection("template");
                           setIsEditNavOpen(false);
                         }}
                         className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "template"
@@ -1507,10 +1551,10 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Sidebar navigation for settings - DESKTOP ONLY */}
-                <div className="hidden lg:block lg:col-span-3 space-y-2">
+                <div className="hidden lg:block lg:col-span-3 space-y-2 lg:h-full lg:overflow-y-auto pr-1">
                   <h3 className="text-xs uppercase text-neutral-400 font-bold px-3 mb-4 tracking-wider">Navigasi Edit</h3>
                   <button
-                    onClick={() => setSettingsSection("general")}
+                    onClick={() => handleSelectSection("general")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "general"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1519,7 +1563,7 @@ export default function AdminDashboard() {
                     Informasi Umum
                   </button>
                   <button
-                    onClick={() => setSettingsSection("groomBride")}
+                    onClick={() => handleSelectSection("groomBride")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "groomBride"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1528,7 +1572,7 @@ export default function AdminDashboard() {
                     Mempelai (Groom &amp; Bride)
                   </button>
                   <button
-                    onClick={() => setSettingsSection("loveJourney")}
+                    onClick={() => handleSelectSection("loveJourney")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "loveJourney"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1537,7 +1581,7 @@ export default function AdminDashboard() {
                     Kisah Cinta (Love Journey)
                   </button>
                   <button
-                    onClick={() => setSettingsSection("events")}
+                    onClick={() => handleSelectSection("events")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "events"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1546,7 +1590,7 @@ export default function AdminDashboard() {
                     Jadwal Acara &amp; Maps
                   </button>
                   <button
-                    onClick={() => setSettingsSection("livestreaming")}
+                    onClick={() => handleSelectSection("livestreaming")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "livestreaming"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1555,7 +1599,16 @@ export default function AdminDashboard() {
                     Live Streaming
                   </button>
                   <button
-                    onClick={() => setSettingsSection("dresscode")}
+                    onClick={() => handleSelectSection("prewedding")}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "prewedding"
+                      ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
+                      : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                  >
+                    Video Prewedding
+                  </button>
+                  <button
+                    onClick={() => handleSelectSection("dresscode")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "dresscode"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1564,7 +1617,7 @@ export default function AdminDashboard() {
                     Dresscode
                   </button>
                   <button
-                    onClick={() => setSettingsSection("media")}
+                    onClick={() => handleSelectSection("media")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "media"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1573,7 +1626,7 @@ export default function AdminDashboard() {
                     Lagu &amp; Foto (Media)
                   </button>
                   <button
-                    onClick={() => setSettingsSection("weddingGift")}
+                    onClick={() => handleSelectSection("weddingGift")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "weddingGift"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1582,7 +1635,7 @@ export default function AdminDashboard() {
                     Hadiah / Amplop Digital
                   </button>
                   <button
-                    onClick={() => setSettingsSection("penutup")}
+                    onClick={() => handleSelectSection("penutup")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "penutup"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900/60"
@@ -1594,7 +1647,7 @@ export default function AdminDashboard() {
                   <div className="h-px bg-neutral-800/40 my-1" />
 
                   <button
-                    onClick={() => setSettingsSection("template")}
+                    onClick={() => handleSelectSection("template")}
                     className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "template"
                       ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
                       : "text-neutral-500 hover:text-white hover:bg-neutral-900/60"
@@ -1605,7 +1658,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Form settings */}
-                <div className="lg:col-span-5 space-y-6">
+                <div className="lg:col-span-5 space-y-6 lg:h-full lg:overflow-y-auto pr-2 pb-8">
                   <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl p-6 backdrop-blur-md">
 
                     {/* SECTION: GENERAL */}
@@ -1699,7 +1752,7 @@ export default function AdminDashboard() {
                                       <span>Hapus</span>
                                     </button>
                                   )}
-                                </div>
+                               </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   <div className="md:col-span-1">
@@ -2151,48 +2204,8 @@ export default function AdminDashboard() {
                                 <label className="block text-xs text-neutral-400 mb-1">Google Maps Link</label>
                                 <input
                                   type="text"
-                                  value={settings.weddingReception.googleMapsLink}
+                              value={settings.weddingReception.googleMapsLink}
                                   onChange={(e) => handleUpdateField("weddingReception.googleMapsLink", e.target.value)}
-                                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-
-                        {/* PREWEDDING VIDEO */}
-                        <div className="border-t border-neutral-800/60 pt-6 space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold uppercase text-neutral-300">Video Prewedding (Embed)</h3>
-                            <label className="flex items-center gap-x-2 cursor-pointer text-xs">
-                              <input
-                                type="checkbox"
-                                checked={settings.prewedding.enabled}
-                                onChange={(e) => handleUpdateField("prewedding.enabled", e.target.checked)}
-                                className="rounded bg-neutral-950 border-neutral-800 text-white focus:ring-0 focus:ring-offset-0"
-                              />
-                              <span>Aktifkan Section</span>
-                            </label>
-                          </div>
-
-                          {settings.prewedding.enabled && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-950/40 rounded-xl border border-neutral-800/40">
-                              <div>
-                                <label className="block text-xs text-neutral-400 mb-1">Youtube Video Code (Contoh: YkO-e-gyp58)</label>
-                                <input
-                                  type="text"
-                                  value={settings.prewedding.link}
-                                  onChange={(e) => handleUpdateField("prewedding.link", e.target.value)}
-                                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs text-neutral-400 mb-1">Keterangan / Caption Video</label>
-                                <input
-                                  type="text"
-                                  value={settings.prewedding.detail}
-                                  onChange={(e) => handleUpdateField("prewedding.detail", e.target.value)}
                                   className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
                                 />
                               </div>
@@ -2259,14 +2272,15 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                             <div>
-                              <label className="block text-xs text-neutral-400 mb-1">Link Streaming Youtube / Zoom</label>
+                              <label className="block text-xs text-neutral-400 mb-1">Link Live Streaming (YouTube / Zoom)</label>
                               <input
                                 type="text"
                                 value={settings.livestreaming.link}
                                 onChange={(e) => handleUpdateField("livestreaming.link", e.target.value)}
                                 className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
-                                placeholder="https://youtube.com/..."
+                                placeholder="https://www.youtube.com/watch?v=... atau Zoom link"
                               />
+                              <p className="text-[10px] text-neutral-500 mt-1">Tempel link video YouTube atau link Zoom/Meet langsung</p>
                             </div>
                             <div className="md:col-span-2">
                               <label className="block text-xs text-neutral-400 mb-1">Deskripsi Live Streaming</label>
@@ -2276,6 +2290,61 @@ export default function AdminDashboard() {
                                 onChange={(e) => handleUpdateField("livestreaming.detail", e.target.value)}
                                 className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
                                 placeholder="Keterangan tambahan..."
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* SECTION: VIDEO PREWEDDING */}
+                    {settingsSection === "prewedding" && (
+                      <div className="space-y-6">
+                        <div className="flex justify-between items-center border-b border-neutral-800 pb-3">
+                          <h2 className="text-xl font-ovo text-white uppercase tracking-wider">Video Prewedding (Embed)</h2>
+                          <label className="flex items-center gap-x-2 cursor-pointer text-xs">
+                            <input
+                              type="checkbox"
+                              checked={settings.prewedding.enabled}
+                              onChange={(e) => handleUpdateField("prewedding.enabled", e.target.checked)}
+                              className="rounded bg-neutral-950 border-neutral-800 text-white focus:ring-0 focus:ring-offset-0"
+                            />
+                            <span>Aktifkan Section</span>
+                          </label>
+                        </div>
+
+                        <div className="bg-blue-950/30 border border-blue-800/40 rounded-xl p-4 text-xs text-blue-300 space-y-1">
+                          <p className="font-semibold flex items-center gap-x-2 text-blue-200">
+                            <FaInfoCircle className="text-blue-400" /> INFO SECTION PREWEDDING VIDEO
+                          </p>
+                          <p>Tampilkan pemutar video prewedding dari YouTube secara langsung di slide undangan digital Anda.</p>
+                        </div>
+
+                        {settings.prewedding.enabled && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-neutral-950/40 rounded-xl border border-neutral-800/40 animate-fadeIn">
+                            <div>
+                              <label className="block text-xs text-neutral-400 mb-1">Link Video YouTube</label>
+                              <input
+                                type="text"
+                                value={settings.prewedding.link}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const extracted = extractYoutubeId(val);
+                                  handleUpdateField("prewedding.link", extracted || val);
+                                }}
+                                placeholder="https://www.youtube.com/watch?v=..."
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
+                              />
+                              <p className="text-[10px] text-neutral-500 mt-1">Tempel link video YouTube langsung (ID video akan otomatis terdeteksi)</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-neutral-400 mb-1">Keterangan / Caption Video</label>
+                              <input
+                                type="text"
+                                value={settings.prewedding.detail}
+                                onChange={(e) => handleUpdateField("prewedding.detail", e.target.value)}
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white"
+                                placeholder="Contoh: Unveiling Our Prewedding Story"
                               />
                             </div>
                           </div>
@@ -2451,6 +2520,7 @@ export default function AdminDashboard() {
                           <ul className="list-disc pl-4 space-y-1 font-mono text-neutral-400">
                             <li><strong className="text-white">{"{nama}"}</strong> : Nama dari tamu (misal: Budi Santoso)</li>
                             <li><strong className="text-white">{"{link}"}</strong> : Link undangan tamu tersebut (misal: http://domain.com/?to=Budi%20Santoso)</li>
+                            <li><strong className="text-white">{"{tanggal}"}</strong> : Hari &amp; Tanggal Acara (diambil otomatis dari jadwal pernikahan, misal: Minggu, 11 Oktober 2026)</li>
                           </ul>
                           <p className="mt-2 text-neutral-500">Anda dapat memformat pesan menggunakan cetak tebal (*teks*), miring (_teks_), atau coret (~teks~) yang didukung oleh WhatsApp.</p>
                         </div>
@@ -2758,8 +2828,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Live Preview (Mobile Device mockup) */}
-                <div className="lg:col-span-4 hidden lg:block">
-                  <div className="sticky top-24 space-y-4">
+                <div className="lg:col-span-4 hidden lg:flex flex-col lg:h-full lg:overflow-hidden justify-start">
+                  <div className="space-y-3 w-full flex flex-col items-center flex-1 min-h-0">
                     <div className="flex items-center justify-between px-2">
                       <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-x-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>

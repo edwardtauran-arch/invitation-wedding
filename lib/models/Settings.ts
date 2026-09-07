@@ -111,10 +111,37 @@ const settingsSchema = new Schema(
       sideImage: { type: String, default: "/foto_1_samping.jpg" },
     },
 
-    // Invitation Message Template (for WhatsApp invites)
     invitationTemplate: {
       type: String,
-      default: "Halo *{nama}*,\n\nKami mengundang Anda untuk menghadiri acara pernikahan kami. Berikut link undangan digital Anda:\n{link}\n\nMerupakan suatu kehormatan bagi kami jika Anda berkenan hadir.\n\nTerima kasih!",
+      default: `Halo {nama},
+
+BREAKING NEWS 📢
+Setelah proses "pendakian" panjang, dua traveler kece ini akhirnya sepakat mau explore hidup bareng… selamanya!
+
+Edward Tauran & Dian Pangandaheng
+siap-siap summit ke jenjang pernikahan 💍
+
+🗓️ Hari/Tgl: {tanggal}
+📍 Basecamp acara: cek di link ya!
+
+Sebelum berangkat, jangan lupa siapin:
+✅ Fisik yang prima (buat joged di lokasi)
+✅ Perut kosong (biar bisa summit meja prasmanan)
+✅ Hati yang penuh bahagia buat kita berdua 🥹
+
+Klik link ini buat lihat itinerary lengkap & titik kumpul (detail lokasi):
+👉 {link}
+
+Merupakan suatu kehormatan besar buat kami kalau {nama} berkenan hadir dan jadi bagian dari "summit attack" kami menuju Married Life 
+
+Jangan lupa daftar ulang pendakian alias konfirmasi kehadiran via form RSVP di link undangan ya!
+
+Terima kasih banyak buat waktu, doa, dan semangatnya 🙏🏼
+Tuhan memberkati!
+
+Kalau mau bantu isi "logistik" perbekalan hidup baru kami, boleh banget mampir ke:
+💰 SMBC 90360127959 a.n. Mardianti Ekaputri P
+📱 atau bisa juga langsung scan QRIS yang ada di dalam undangan ya!`,
     },
 
     // Wedding Gift / Amplop Digital

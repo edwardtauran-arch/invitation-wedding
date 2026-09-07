@@ -9,6 +9,7 @@ import CountdownTimer from "./Countdown";
 import Form from "./Form";
 import WishesList from "./WishesList";
 import { config as defaultConfig } from "@/lib/config";
+import { extractYoutubeId } from "@/lib/youtube";
 
 const DEFAULT_GALLERY_IMAGES = [
   "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80",
@@ -601,53 +602,67 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                 </div>
               </div>
             </div>
-            {/* Slide 7 */}
+            {/* SLIDE 7: LIVE STREAMING */}
             {config.livestreaming.enabled && (
               <div
                 id="section-livestreaming"
-                className={`dresscode-blur-above dresscode-dim-overlay snap-start text-white h-screen flex flex-col justify-between pt-16 pb-32 px-12 ${isDresscodeInView ? 'dresscode-blur-active dresscode-dim-active' : ''}`}
+                className="snap-start text-white h-screen flex flex-col justify-center items-center py-12 px-6 relative"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide6 || "/slide_6.jpg"})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}
               >
-                <h1
-                  ref={slide7Ref}
-                  className={`text-2xl text-white  font-ovo fadeInMoveSlow ${isSlide7InView ? "active" : ""} bg-black/10 backdrop-blur-[2px] rounded-xl p-4 md:p-6 border border-white/10 w-fit h-fit`}
-                >
-                  JOIN OUR EXCLUSIVE LIVE STREAMING EVENT
-                </h1>
-
                 <div
-                  className={`mt-5 mx-auto flex flex-col fadeInMove ${isSlide7InView ? "active" : ""} bg-black/10 backdrop-blur-[2px] rounded-xl p-6 border border-white/10 w-fit h-fit items-center text-center`}
                   ref={slide7Ref}
+                  className={`fadeInMove ${isSlide7InView ? "active" : ""} bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 max-w-lg w-full flex flex-col items-center text-center space-y-4`}
                 >
-                  <h3 className="uppercase font-ovo text-sm mt-5 mb-2">
-                    {new Date(config.eventDate).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                    <br /> {config.livestreaming.time}
-                  </h3>
-                  <p className="text-sm font-legan text-white">
-                    {config.livestreaming.detail}
-                  </p>
-                  <Link
-                    href={config.livestreaming.link}
-                    target="_blank"
-                    className="cursor-pointer hover:text-white/20 text-sm rounded-full flex items-center gap-x-2 text-center font-legan mt-5 bg-[#3B3B3B] w-fit px-6 py-2 text-white"
-                  >
-                    Join Live Streaming
-                  </Link>
+                  <h1 className="text-lg md:text-2xl text-white font-ovo uppercase tracking-widest leading-snug">
+                    Join Our Live Streaming
+                  </h1>
+
+                  <div className="w-12 h-0.5 bg-white/30 my-1"></div>
+
+                  <div className="space-y-1">
+                    <p className="uppercase font-ovo text-xs md:text-sm text-white/90 tracking-wide">
+                      {new Date(config.eventDate).toLocaleDateString("id-ID", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                    {config.livestreaming.time && (
+                      <p className="text-xs md:text-sm font-mono text-white/80">
+                        Waktu: {config.livestreaming.time} WIB
+                      </p>
+                    )}
+                  </div>
+
+                  {config.livestreaming.detail && (
+                    <p className="text-xs md:text-sm font-legan text-white/80 leading-relaxed max-w-xs">
+                      {config.livestreaming.detail}
+                    </p>
+                  )}
+
+                  {config.livestreaming.link && (
+                    <Link
+                      href={config.livestreaming.link}
+                      target="_blank"
+                      className="cursor-pointer hover:bg-white hover:text-black transition-all duration-300 text-xs md:text-sm rounded-full flex items-center gap-x-2 text-center font-legan bg-white/20 backdrop-blur-sm border border-white/40 px-6 py-2.5 text-white mt-3 font-semibold shadow-lg"
+                    >
+                      Join Live Streaming
+                    </Link>
+                  )}
                 </div>
-              </div>)}
-            {/* SLIDE 8 */}
+              </div>
+            )}
+
+            {/* SLIDE 8: PREWEDDING */}
             {config.prewedding.enabled && (
               <div
-                className="snap-start text-white h-screen flex flex-col justify-center pt-16 pb-16 px-8 "
+                id="section-prewedding"
+                className="snap-start text-white h-screen flex flex-col justify-center items-center py-12 px-6 relative"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide7 || "/slide_7.jpg"})`,
                   backgroundSize: "cover",
@@ -656,18 +671,21 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
               >
                 <div
                   ref={slide8Ref}
-                  className={`${isSlide8InView ? "active" : ""} fadeInMove `}
+                  className={`${isSlide8InView ? "active" : ""} fadeInMove bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 max-w-2xl w-full flex flex-col items-center text-center space-y-4`}
                 >
-                  <h1 className="text-3xl text-white  font-ovo text-center uppercase">
+                  <h1 className="text-xl md:text-3xl text-white font-ovo uppercase tracking-wider">
                     Unveiling Our Prewedding Story
                   </h1>
+
+                  <div className="w-12 h-0.5 bg-white/30 my-1"></div>
+
                   <div
-                    className="mt-10 mx-auto w-full max-w-2xl relative"
+                    className="w-full relative rounded-xl overflow-hidden shadow-2xl border border-white/20"
                     style={{ paddingBottom: "56.25%", height: 0 }}
                   >
                     <iframe
                       className="absolute top-0 left-0 w-full h-full"
-                      src={`https://www.youtube.com/embed/${config.prewedding.link}?autoplay=1&mute=1&loop=1`}
+                      src={`https://www.youtube.com/embed/${extractYoutubeId(config.prewedding.link)}?autoplay=1&mute=1&loop=1`}
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       referrerPolicy="strict-origin-when-cross-origin"
@@ -675,13 +693,14 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                     ></iframe>
                   </div>
 
-                  <div className="-mt-12 w-72 transform skew-x-6 drop-shadow">
-                    <p className="text-3xl font-dancing text-white/80 ">
+                  {config.prewedding.detail && (
+                    <p className="text-xl md:text-2xl font-dancing text-white/90 drop-shadow pt-1">
                       {config.prewedding.detail}
                     </p>
-                  </div>
+                  )}
                 </div>
-              </div>)}
+              </div>
+            )}
 
             {/* BANNER DRESSCODE */}
             {(config.dresscode?.enabled ?? false) && (
