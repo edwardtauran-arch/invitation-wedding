@@ -300,6 +300,63 @@ export async function createDynamicGuest(guestData: any) {
   return newGuest;
 }
 
+export async function bulkCreateDynamicGuests(names: string[]) {
+  if (!names || names.length === 0) return { inserted: [], count: 0 };
+
+  const rows = names.map((name) => ({
+    name,
+    phone: "",
+    status: "Belum Dikirim",
+  }));
+
+  try {
+    const { data, error } = await supabase
+      .from("guests")
+      .insert(rows)
+      .select();
+
+    if (!error && data) {
+      return {
+        inserted: data.map((g: any) => ({
+          _id: g.id,
+          name: g.name,
+          phone: g.phone,
+          status: g.status,
+          sentAt: g.sent_at,
+          createdAt: g.created_at,
+          updatedAt: g.updated_at,
+        })),
+        count: data.length,
+      };
+    }
+    throw new Error(error?.message || "Supabase insert failed");
+  } catch (err) {
+    console.warn("Supabase bulk create guests failed, using file fallback.", err);
+  }
+
+  // Fallback: insert one by one into JSON file
+  await ensureDataDir();
+  const filePath = path.join(DATA_DIR, "guests.json");
+  let guests: any[] = [];
+  try {
+    const fileData = await fs.readFile(filePath, "utf-8");
+    guests = JSON.parse(fileData);
+  } catch (e) {}
+
+  const newGuests = names.map((name, i) => ({
+    _id: `json_${Date.now()}_${i}`,
+    name,
+    phone: "",
+    status: "Belum Dikirim",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }));
+
+  guests.push(...newGuests);
+  await safeWriteFile(filePath, JSON.stringify(guests, null, 2));
+  return { inserted: newGuests, count: newGuests.length };
+}
+
 export async function updateDynamicGuest(id: string, guestData: any) {
   // If it's a JSON fallback ID, skip Supabase
   if (!id.startsWith("json_")) {

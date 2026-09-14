@@ -179,32 +179,46 @@ export default function AdminDashboard() {
   const [isBulkGuestModalOpen, setIsBulkGuestModalOpen] = useState(false);
   const [bulkGuestText, setBulkGuestText] = useState("");
   const [isSavingBulk, setIsSavingBulk] = useState(false);
+  const [isBulkConfirmOpen, setIsBulkConfirmOpen] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+
+  const bulkGuestNames = bulkGuestText.split("\n").map(n => n.trim()).filter(n => n.length > 0);
+
+  const handleOpenBulkConfirm = () => {
+    if (bulkGuestNames.length === 0) return;
+    setIsBulkConfirmOpen(true);
+  };
 
   const handleSaveBulkGuests = async () => {
-    if (!bulkGuestText.trim()) return;
+    if (bulkGuestNames.length === 0) return;
+    setIsBulkConfirmOpen(false);
     setIsSavingBulk(true);
-    const names = bulkGuestText.split("\n").map(n => n.trim()).filter(n => n.length > 0);
-    let successCount = 0;
+    setBulkProgress({ current: 0, total: bulkGuestNames.length });
 
     try {
-      for (const name of names) {
-        const res = await fetch("/api/admin/guests", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, phone: "" }),
-        });
-        if (res.ok) successCount++;
-      }
+      // Batch insert via single API call
+      const res = await fetch("/api/admin/guests/bulk-insert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ names: bulkGuestNames }),
+      });
 
-      showToast(`${successCount} tamu berhasil ditambahkan!`, "success");
-      setBulkGuestText("");
-      setIsBulkGuestModalOpen(false);
-      fetchInitialData(true);
+      if (res.ok) {
+        const data = await res.json();
+        setBulkProgress({ current: data.count, total: bulkGuestNames.length });
+        showToast(`${data.count} tamu berhasil ditambahkan! 🎉`, "success");
+        setBulkGuestText("");
+        setIsBulkGuestModalOpen(false);
+        fetchInitialData(true);
+      } else {
+        showToast("Gagal menambahkan tamu. Coba lagi.", "error");
+      }
     } catch (error) {
       console.error(error);
-      showToast("Terjadi kesalahan saat menambahkan tamu bulk.", "error");
+      showToast("Terjadi kesalahan saat menambahkan tamu.", "error");
     } finally {
       setIsSavingBulk(false);
+      setBulkProgress(null);
     }
   };
 
@@ -3422,8 +3436,9 @@ export default function AdminDashboard() {
                 Tambah Banyak Tamu (Bulk)
               </h3>
               <button
-                onClick={() => setIsBulkGuestModalOpen(false)}
-                className="text-neutral-500 hover:text-white transition text-lg"
+                onClick={() => { if (!isSavingBulk) setIsBulkGuestModalOpen(false); }}
+                className="text-neutral-500 hover:text-white transition text-lg disabled:opacity-30"
+                disabled={isSavingBulk}
               >
                 &times;
               </button>
@@ -3438,26 +3453,102 @@ export default function AdminDashboard() {
                 <textarea
                   value={bulkGuestText}
                   onChange={(e) => setBulkGuestText(e.target.value)}
-                  className="w-full h-48 bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition text-sm font-legan resize-none"
+                  disabled={isSavingBulk}
+                  className="w-full h-48 bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition text-sm font-legan resize-none disabled:opacity-40"
                   placeholder="Masukkan teks..."
                 ></textarea>
               </div>
+
+              {/* Live count badge */}
+              {bulkGuestNames.length > 0 && !isSavingBulk && (
+                <div className="flex items-center gap-x-2 text-xs text-neutral-400">
+                  <span className="inline-flex items-center gap-x-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white font-semibold">
+                    <FaUsers className="w-3 h-3" />
+                    {bulkGuestNames.length} nama terdeteksi
+                  </span>
+                  <span>— siap untuk ditambahkan</span>
+                </div>
+              )}
+
+              {/* Progress bar saat loading */}
+              {isSavingBulk && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-neutral-400">
+                    <span className="flex items-center gap-x-1.5 animate-pulse">
+                      <div className="w-3 h-3 border-2 border-t-white border-white/20 rounded-full animate-spin"></div>
+                      Sedang menambahkan {bulkProgress?.total ?? bulkGuestNames.length} tamu ke database...
+                    </span>
+                    <span className="font-mono text-white font-semibold">
+                      {bulkProgress ? `${bulkProgress.current}/${bulkProgress.total}` : "0/" + bulkGuestNames.length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-neutral-800 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-white h-2 rounded-full transition-all duration-500"
+                      style={{ width: bulkProgress && bulkProgress.total > 0 ? `${(bulkProgress.current / bulkProgress.total) * 100}%` : "30%" }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-neutral-500 text-center">Mohon jangan tutup atau refresh halaman ini</p>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-neutral-800 px-6 py-4 flex justify-end gap-x-2">
               <button
                 onClick={() => setIsBulkGuestModalOpen(false)}
-                className="px-4 py-2 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-lg text-xs transition font-semibold"
+                className="px-4 py-2 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-lg text-xs transition font-semibold disabled:opacity-30"
                 disabled={isSavingBulk}
               >
                 Batal
               </button>
               <button
-                onClick={handleSaveBulkGuests}
-                disabled={isSavingBulk}
-                className="px-4 py-2 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs transition font-bold shadow disabled:opacity-50"
+                onClick={handleOpenBulkConfirm}
+                disabled={isSavingBulk || bulkGuestNames.length === 0}
+                className="px-5 py-2 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs transition font-bold shadow disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-x-2"
               >
-                {isSavingBulk ? "Menyimpan..." : "Simpan Semua"}
+                <FaPlus className="w-3 h-3" />
+                {isSavingBulk ? "Menambahkan..." : "Tambahkan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK CONFIRM MODAL */}
+      {isBulkConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div className="border-b border-neutral-800 px-6 py-4">
+              <h3 className="font-ovo text-base text-white uppercase tracking-wider flex items-center gap-x-2">
+                <FaUsers className="text-white w-4 h-4" />
+                Konfirmasi Penambahan
+              </h3>
+            </div>
+            <div className="p-6 space-y-3">
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                Anda akan menambahkan
+              </p>
+              <div className="flex items-center justify-center py-4">
+                <span className="text-5xl font-bold text-white font-ovo">{bulkGuestNames.length}</span>
+                <span className="ml-3 text-neutral-400 text-sm">tamu baru</span>
+              </div>
+              <p className="text-xs text-neutral-500 text-center">
+                Semua tamu akan ditambahkan sekaligus. Proses ini cepat dan tidak bisa dibatalkan.
+              </p>
+            </div>
+            <div className="border-t border-neutral-800 px-6 py-4 flex justify-end gap-x-2">
+              <button
+                onClick={() => setIsBulkConfirmOpen(false)}
+                className="px-4 py-2 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white rounded-lg text-xs transition font-semibold"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveBulkGuests}
+                className="px-5 py-2 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs transition font-bold shadow flex items-center gap-x-2"
+              >
+                <FaCheckCircle className="w-3 h-3" />
+                Ya, Tambahkan Semua
               </button>
             </div>
           </div>
