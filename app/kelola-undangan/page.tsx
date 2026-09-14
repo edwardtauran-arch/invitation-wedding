@@ -779,7 +779,7 @@ export default function AdminDashboard() {
           setGuests(prev => prev.map(g => g._id === saved._id ? saved : g));
           showToast("Data tamu berhasil diperbarui.", "success");
         } else {
-          setGuests(prev => [saved, ...prev]);
+          setGuests(prev => [...prev, saved]);
           showToast("Tamu baru berhasil ditambahkan! 🎉", "success");
         }
         setIsGuestModalOpen(false);
@@ -946,7 +946,7 @@ export default function AdminDashboard() {
     document.body.removeChild(link);
   };
 
-  // Filtered Guests list
+  // Filtered Guests list - sorted ascending (oldest first, as inserted)
   const filteredGuests = guests.filter(guest => {
     const matchesSearch = guest.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
       guest.phone.includes(guestSearch);
@@ -2976,7 +2976,7 @@ export default function AdminDashboard() {
 
                 {/* Guests Table */}
                 <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md">
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-340px)]">
                     <table className="w-full border-collapse text-left text-sm">
                       <thead>
                         <tr className="border-b border-neutral-800 bg-neutral-950/40 text-neutral-400 font-semibold">
@@ -3173,7 +3173,7 @@ export default function AdminDashboard() {
 
                   {/* RSVP Table */}
                   <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md p-6">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)]">
                       <table className="w-full text-left border-collapse">
                         <thead>
                           <tr className="border-b border-neutral-800 text-neutral-400 text-sm">
@@ -3433,15 +3433,13 @@ export default function AdminDashboard() {
               <div>
                 <label className="block text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wide">Daftar Nama Tamu</label>
                 <p className="text-[11px] text-neutral-500 mb-2 leading-relaxed">
-                  Masukkan nama tamu, pisahkan setiap nama dengan enter (baris baru). Contoh:<br />
-                  Steven Mandey & Sheryl Karnoto<br />
-                  Amanda Rumenser & Brian
+                  Masukkan nama tamu, pisahkan setiap nama dengan enter (baris baru).
                 </p>
                 <textarea
                   value={bulkGuestText}
                   onChange={(e) => setBulkGuestText(e.target.value)}
                   className="w-full h-48 bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition text-sm font-legan resize-none"
-                  placeholder="Steven Mandey & Sheryl Karnoto&#10;Amanda Rumenser & Brian&#10;Reyvaldi Manulang & Gaileen"
+                  placeholder="Masukkan teks..."
                 ></textarea>
               </div>
             </div>

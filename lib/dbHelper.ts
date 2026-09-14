@@ -223,7 +223,7 @@ export async function getDynamicGuests() {
     const { data, error } = await supabase
       .from("guests")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (!error && data) {
       // Map Supabase column names to match frontend expected format
