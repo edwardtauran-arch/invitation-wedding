@@ -910,8 +910,40 @@ export default function AdminDashboard() {
   };
 
   const handleSendWhatsApp = async (guest: Guest) => {
-    const waLink = getWhatsAppLink(guest);
-    window.open(waLink, "_blank");
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+
+    if (!isMobile) {
+      // Desktop: gunakan whatsapp:// protocol → buka WhatsApp Desktop app (emoji tampil benar)
+      // Jika app tidak terpasang, fallback ke wa.me setelah 1.5 detik
+      const phone = formatPhoneNumber(guest.phone);
+      const msg = (() => {
+        if (!settings) return "";
+        const origin = window.location.origin;
+        const inviteLink = `${origin}/?to=${encodeURIComponent(guest.name.toLowerCase()).replace(/%20/g, "+")}`;
+        let m = settings.invitationTemplate || "";
+        m = m.replace(/{nama}/g, guest.name);
+        m = m.replace(/{link}/g, inviteLink);
+        m = m.replace(/{tanggal}/g, formatEventDateStr(settings.eventDate));
+        m = m.replace(/{tanggal_acara}/g, formatEventDateStr(settings.eventDate));
+        m = m.replace(/{hari_tanggal}/g, formatEventDateStr(settings.eventDate));
+        return m;
+      })();
+      const encodedMsg = encodeURIComponent(msg);
+
+      // Coba buka WhatsApp Desktop app
+      window.location.href = `whatsapp://send?phone=${phone}&text=${encodedMsg}`;
+
+      // Fallback ke wa.me jika desktop app tidak terpasang
+      setTimeout(() => {
+        window.open(`https://wa.me/${phone}?text=${encodedMsg}`, "_blank");
+      }, 1500);
+    } else {
+      // Mobile: pakai wa.me universal link
+      const waLink = getWhatsAppLink(guest);
+      window.open(waLink, "_blank");
+    }
 
     try {
       const res = await fetch(`/api/admin/guests/${guest._id}`, {
