@@ -933,22 +933,10 @@ export default function AdminDashboard() {
   };
 
   const handleSendWhatsApp = async (guest: Guest) => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    );
-
-    const phone = formatPhoneNumber(guest.phone);
+    // Pakai wa.me untuk semua device → tampil landing page "Share on WhatsApp"
+    // Emoji aman karena encodeWhatsAppText tidak meng-encode karakter Unicode
     const waLink = getWhatsAppLink(guest);
-
-    const encodedMsg = encodeWhatsAppText(buildWhatsAppMsg(guest));
-
-    if (!isMobile) {
-      // Desktop: langsung ke web.whatsapp.com/send, emoji lewat sebagai Unicode mentah
-      window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`, "_blank");
-    } else {
-      // Mobile: wa.me universal link → buka WhatsApp app langsung
-      window.open(`https://wa.me/${phone}?text=${encodedMsg}`, "_blank");
-    }
+    window.open(waLink, "_blank");
 
     try {
       const res = await fetch(`/api/admin/guests/${guest._id}`, {
