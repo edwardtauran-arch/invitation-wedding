@@ -38,20 +38,24 @@ const dancingScript = Ms_Madi({
 });
 
 export async function generateMetadata() {
-  const siteUrl = process.env.URL || process.env.NEXT_PUBLIC_SITE_URL || "https://edwardian.netlify.app";
+  // Gunakan NEXT_PUBLIC_SITE_URL jika ada, atau otomatis dari VERCEL_URL, atau fallback ke vercel
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || vercelUrl || "https://edwardian.vercel.app";
   
   try {
     const settings = await getDynamicSettings();
     const coupleNames = settings?.coupleNames || "EDWARD & DIAN";
     const slide10Image = settings?.slideImages?.slide10 || "/slide_9.jpg";
     
-    // Ensure image is absolute URL for WhatsApp thumbnail
-    // WhatsApp requires og:image to be < 300KB, so we route it through Next.js image optimization
-    const imagePath = slide10Image.startsWith("http") 
-      ? slide10Image 
-      : `${slide10Image.startsWith("/") ? "" : "/"}${slide10Image}`;
-      
-    const absoluteImageUrl = `${siteUrl}/_next/image?url=${encodeURIComponent(imagePath)}&w=1080&q=75`;
+    // Jika gambar sudah absolute URL (dari Supabase/CDN), pakai langsung
+    // Jika relative path, route ke _next/image agar ukuran < 300KB (syarat WhatsApp)
+    let absoluteImageUrl: string;
+    if (slide10Image.startsWith("http")) {
+      absoluteImageUrl = slide10Image;
+    } else {
+      const imagePath = slide10Image.startsWith("/") ? slide10Image : `/${slide10Image}`;
+      absoluteImageUrl = `${siteUrl}/_next/image?url=${encodeURIComponent(imagePath)}&w=1200&q=80`;
+    }
 
     return {
       title: `THE Wedding of ${coupleNames.toUpperCase()}`,
