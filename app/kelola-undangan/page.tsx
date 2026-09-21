@@ -914,10 +914,12 @@ export default function AdminDashboard() {
       navigator.userAgent
     );
 
+    const phone = formatPhoneNumber(guest.phone);
+    const waLink = getWhatsAppLink(guest);
+
     if (!isMobile) {
-      // Desktop: gunakan whatsapp:// protocol → buka WhatsApp Desktop app (emoji tampil benar)
-      // Jika app tidak terpasang, fallback ke wa.me setelah 1.5 detik
-      const phone = formatPhoneNumber(guest.phone);
+      // Desktop: langsung ke web.whatsapp.com/send tanpa redirect wa.me
+      // Ini menjaga encoding emoji tetap intact (wa.me redirect bisa corrupt emoji)
       const msg = (() => {
         if (!settings) return "";
         const origin = window.location.origin;
@@ -931,17 +933,9 @@ export default function AdminDashboard() {
         return m;
       })();
       const encodedMsg = encodeURIComponent(msg);
-
-      // Coba buka WhatsApp Desktop app
-      window.location.href = `whatsapp://send?phone=${phone}&text=${encodedMsg}`;
-
-      // Fallback ke wa.me jika desktop app tidak terpasang
-      setTimeout(() => {
-        window.open(`https://wa.me/${phone}?text=${encodedMsg}`, "_blank");
-      }, 1500);
+      window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`, "_blank");
     } else {
-      // Mobile: pakai wa.me universal link
-      const waLink = getWhatsAppLink(guest);
+      // Mobile: pakai wa.me universal link → buka WhatsApp app langsung
       window.open(waLink, "_blank");
     }
 
