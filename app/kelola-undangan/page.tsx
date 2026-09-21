@@ -894,26 +894,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Encode teks untuk WhatsApp: hanya encode karakter URL berbahaya,
-  // biarkan emoji & Unicode lain lewat mentah agar tidak jadi ◆
-  const encodeWhatsAppText = (text: string): string =>
-    [...text]
-      .map((char) => {
-        const code = char.codePointAt(0) ?? 0;
-        if (code > 127) return char; // Unicode / emoji → biarkan as-is
-        if (char === '\n') return '%0A';
-        if (char === '\r') return '';
-        if (char === ' ') return '%20';
-        if (char === '&') return '%26';
-        if (char === '=') return '%3D';
-        if (char === '+') return '%2B';
-        if (char === '?') return '%3F';
-        if (char === '#') return '%23';
-        if (char === '%') return '%25';
-        return char;
-      })
-      .join('');
-
   const buildWhatsAppMsg = (guest: Guest): string => {
     if (!settings) return "";
     const origin = window.location.origin;
@@ -927,9 +907,17 @@ export default function AdminDashboard() {
     return m;
   };
 
+  // Gunakan api.whatsapp.com/send LANGSUNG — tidak lewat wa.me redirect yg corrupt emoji
   const getWhatsAppLink = (guest: Guest) => {
     if (!settings) return "";
-    return `https://wa.me/${formatPhoneNumber(guest.phone)}?text=${encodeWhatsAppText(buildWhatsAppMsg(guest))}`;
+    const phone = formatPhoneNumber(guest.phone);
+    const encodedMsg = encodeURIComponent(buildWhatsAppMsg(guest));
+    if (phone) {
+      // Ada nomor HP → buka langsung ke kontak tersebut
+      return `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`;
+    }
+    // Tidak ada nomor HP → tampil landing page "Share on WhatsApp"
+    return `https://api.whatsapp.com/send?text=${encodedMsg}`;
   };
 
   const handleSendWhatsApp = async (guest: Guest) => {
