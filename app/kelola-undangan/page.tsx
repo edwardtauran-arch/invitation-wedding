@@ -906,7 +906,7 @@ export default function AdminDashboard() {
     msg = msg.replace(/{tanggal_acara}/g, formatEventDateStr(settings.eventDate));
     msg = msg.replace(/{hari_tanggal}/g, formatEventDateStr(settings.eventDate));
 
-    return `https://api.whatsapp.com/send?phone=${formatPhoneNumber(guest.phone)}&text=${encodeURIComponent(msg)}`;
+    return `https://wa.me/${formatPhoneNumber(guest.phone)}?text=${encodeURIComponent(msg)}`;
   };
 
   const handleSendWhatsApp = async (guest: Guest) => {
