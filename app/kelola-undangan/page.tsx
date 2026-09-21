@@ -894,19 +894,42 @@ export default function AdminDashboard() {
     }
   };
 
-  const getWhatsAppLink = (guest: Guest) => {
+  // Encode teks untuk WhatsApp: hanya encode karakter URL berbahaya,
+  // biarkan emoji & Unicode lain lewat mentah agar tidak jadi ◆
+  const encodeWhatsAppText = (text: string): string =>
+    [...text]
+      .map((char) => {
+        const code = char.codePointAt(0) ?? 0;
+        if (code > 127) return char; // Unicode / emoji → biarkan as-is
+        if (char === '\n') return '%0A';
+        if (char === '\r') return '';
+        if (char === ' ') return '%20';
+        if (char === '&') return '%26';
+        if (char === '=') return '%3D';
+        if (char === '+') return '%2B';
+        if (char === '?') return '%3F';
+        if (char === '#') return '%23';
+        if (char === '%') return '%25';
+        return char;
+      })
+      .join('');
+
+  const buildWhatsAppMsg = (guest: Guest): string => {
     if (!settings) return "";
     const origin = window.location.origin;
     const inviteLink = `${origin}/?to=${encodeURIComponent(guest.name.toLowerCase()).replace(/%20/g, '+')}`;
+    let m = settings.invitationTemplate || "";
+    m = m.replace(/{nama}/g, guest.name);
+    m = m.replace(/{link}/g, inviteLink);
+    m = m.replace(/{tanggal}/g, formatEventDateStr(settings.eventDate));
+    m = m.replace(/{tanggal_acara}/g, formatEventDateStr(settings.eventDate));
+    m = m.replace(/{hari_tanggal}/g, formatEventDateStr(settings.eventDate));
+    return m;
+  };
 
-    let msg = settings.invitationTemplate || "";
-    msg = msg.replace(/{nama}/g, guest.name);
-    msg = msg.replace(/{link}/g, inviteLink);
-    msg = msg.replace(/{tanggal}/g, formatEventDateStr(settings.eventDate));
-    msg = msg.replace(/{tanggal_acara}/g, formatEventDateStr(settings.eventDate));
-    msg = msg.replace(/{hari_tanggal}/g, formatEventDateStr(settings.eventDate));
-
-    return `https://wa.me/${formatPhoneNumber(guest.phone)}?text=${encodeURIComponent(msg)}`;
+  const getWhatsAppLink = (guest: Guest) => {
+    if (!settings) return "";
+    return `https://wa.me/${formatPhoneNumber(guest.phone)}?text=${encodeWhatsAppText(buildWhatsAppMsg(guest))}`;
   };
 
   const handleSendWhatsApp = async (guest: Guest) => {
@@ -917,26 +940,14 @@ export default function AdminDashboard() {
     const phone = formatPhoneNumber(guest.phone);
     const waLink = getWhatsAppLink(guest);
 
+    const encodedMsg = encodeWhatsAppText(buildWhatsAppMsg(guest));
+
     if (!isMobile) {
-      // Desktop: langsung ke web.whatsapp.com/send tanpa redirect wa.me
-      // Ini menjaga encoding emoji tetap intact (wa.me redirect bisa corrupt emoji)
-      const msg = (() => {
-        if (!settings) return "";
-        const origin = window.location.origin;
-        const inviteLink = `${origin}/?to=${encodeURIComponent(guest.name.toLowerCase()).replace(/%20/g, "+")}`;
-        let m = settings.invitationTemplate || "";
-        m = m.replace(/{nama}/g, guest.name);
-        m = m.replace(/{link}/g, inviteLink);
-        m = m.replace(/{tanggal}/g, formatEventDateStr(settings.eventDate));
-        m = m.replace(/{tanggal_acara}/g, formatEventDateStr(settings.eventDate));
-        m = m.replace(/{hari_tanggal}/g, formatEventDateStr(settings.eventDate));
-        return m;
-      })();
-      const encodedMsg = encodeURIComponent(msg);
+      // Desktop: langsung ke web.whatsapp.com/send, emoji lewat sebagai Unicode mentah
       window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodedMsg}`, "_blank");
     } else {
-      // Mobile: pakai wa.me universal link → buka WhatsApp app langsung
-      window.open(waLink, "_blank");
+      // Mobile: wa.me universal link → buka WhatsApp app langsung
+      window.open(`https://wa.me/${phone}?text=${encodedMsg}`, "_blank");
     }
 
     try {
