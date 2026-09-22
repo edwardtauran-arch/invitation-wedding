@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { IoMdRefresh } from "react-icons/io";
 
 interface Wish {
@@ -12,18 +12,17 @@ interface Wish {
 
 const WishesList = () => {
   const [wishes, setWishes] = useState<Wish[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const fetchWishes = async (pageNumber: number) => {
+  const fetchWishes = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/get?page=${pageNumber}&limit=5`);
+      // Ambil semua ucapan sekaligus (limit besar)
+      const response = await fetch(`/api/get?page=1&limit=200`);
       if (!response.ok) throw new Error(`Error: ${response.statusText}`);
       const data = await response.json();
-      setWishes(data.wishes);
-      setTotalPages(data.totalPages);
+      setWishes(data.wishes || []);
     } catch (error) {
       console.error("Error fetching wishes:", error);
     } finally {
@@ -32,8 +31,8 @@ const WishesList = () => {
   };
 
   useEffect(() => {
-    fetchWishes(page);
-  }, [page]);
+    fetchWishes();
+  }, []);
 
   // ✅ Optimistic: tampil langsung saat Form submit tanpa nunggu server
   useEffect(() => {
@@ -46,30 +45,22 @@ const WishesList = () => {
         const filtered = prev.filter(
           (w) => !w._id.startsWith("pending_") || w.name !== newWish.name
         );
-        return [newWish, ...filtered].slice(0, 5);
+        return [newWish, ...filtered];
       });
-      setTotalPages((prev) => Math.max(prev, 1));
     };
 
     window.addEventListener("wishSubmitted", handleNewWish);
     return () => window.removeEventListener("wishSubmitted", handleNewWish);
   }, []);
 
-  const handleRefresh = () => fetchWishes(page);
-
-  const handleNextPage = () => {
-    if (page < totalPages) setPage(page + 1);
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 1) setPage(page - 1);
-  };
+  const handleRefresh = () => fetchWishes();
 
   const visibleWishes = wishes.filter((w) => w.message && w.message.trim() !== "");
 
   return (
-    <div className="text-white">
-      <div className="flex justify-end mb-2">
+    <div className="text-white flex flex-col" style={{ minHeight: 0 }}>
+      {/* Header refresh */}
+      <div className="flex justify-end mb-2 shrink-0">
         <button
           onClick={handleRefresh}
           className={`text-xs text-white ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -79,12 +70,22 @@ const WishesList = () => {
         </button>
       </div>
 
-      <div className="w-full">
+      {/* Scrollable wishes list */}
+      <div
+        ref={scrollRef}
+        className="overflow-y-auto flex-1 pr-1"
+        style={{ maxHeight: "220px", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.2) transparent" }}
+      >
         {visibleWishes.length === 0 ? (
-          <p className="text-xs">No wishes available</p>
+          <p className="text-xs">{loading ? "Memuat ucapan..." : "Belum ada ucapan"}</p>
         ) : (
           visibleWishes.map((wish) => (
-            <div key={wish._id} className={`mb-2 transition-opacity duration-300 ${wish._id.startsWith("pending_") ? "opacity-70" : "opacity-100"}`}>
+            <div
+              key={wish._id}
+              className={`mb-2 transition-opacity duration-300 ${
+                wish._id.startsWith("pending_") ? "opacity-70" : "opacity-100"
+              }`}
+            >
               <p className="font-bold font-legan text-[10px] md:text-sm">{wish.name}</p>
               <p className="text-[8px] md:text-xs my-0.5 opacity-50">
                 {new Date(wish.createdAt).toLocaleString("en-US", {
@@ -100,24 +101,6 @@ const WishesList = () => {
             </div>
           ))
         )}
-      </div>
-
-      <div className="flex justify-between mt-3">
-        <button
-          onClick={handlePreviousPage}
-          className={`text-xs text-white ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={page === 1}
-        >
-          Sebelumnya
-        </button>
-        <p className="text-xs">Page {page} of {totalPages}</p>
-        <button
-          onClick={handleNextPage}
-          className={`text-xs text-white ${page === totalPages ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={page === totalPages}
-        >
-          Selanjutnya
-        </button>
       </div>
     </div>
   );

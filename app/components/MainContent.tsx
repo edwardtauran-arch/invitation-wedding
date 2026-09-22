@@ -790,7 +790,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             {(config.weddingGift?.enabled ?? true) && (
               <div
                 id="section-weddingGift"
-                className="snap-start text-neutral-800 bg-[#FAF6F0] h-screen flex flex-col justify-start md:justify-center pt-12 md:pt-8 pb-4 px-4 overflow-hidden"
+                className="snap-start text-neutral-800 bg-[#FAF6F0] h-screen flex flex-col justify-start md:justify-center pt-6 md:pt-6 pb-4 px-4 overflow-y-auto"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide8 || "/slide_8.jpg"})`,
                   backgroundSize: "cover",
@@ -803,11 +803,11 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                     }`}
                 >
                   {/* Title Header */}
-                  <div className="text-center shrink-0 bg-black/10 backdrop-blur-[2px] rounded-xl p-6 md:p-8 border border-white/10 mx-auto w-fit max-w-[90%] md:max-w-2xl mb-4">
-                    <h2 className="font-dancing text-4xl md:text-6xl text-white leading-none mb-3">
+                  <div className="text-center shrink-0 bg-black/10 backdrop-blur-[2px] rounded-xl p-3 md:p-5 border border-white/10 mx-auto w-fit max-w-[90%] md:max-w-2xl mb-2">
+                    <h2 className="font-dancing text-3xl md:text-5xl text-white leading-none mb-1.5">
                       Wedding Gift
                     </h2>
-                    <p className="text-xs md:text-sm font-legan text-white/90 max-w-[280px] md:max-w-md mx-auto leading-relaxed italic">
+                    <p className="text-[10px] md:text-xs font-legan text-white/90 max-w-[260px] md:max-w-md mx-auto leading-relaxed italic">
                       &ldquo;Doa Restu Anda merupakan karunia yang sangat berarti bagi kami. Dan jika memberi adalah ungkapan tanda kasih Anda, Anda dapat memberi kado secara cashless.&rdquo;
                     </p>
                   </div>
@@ -925,7 +925,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             {/* SLIDE 9 & 10 Merged (RSVP and Wishes) */}
             {config.rsvp.enabled && (
               <div
-                className="snap-start text-white h-screen flex flex-col justify-center pt-24 pb-16 px-4 md:px-8"
+                className="snap-start text-white h-screen flex flex-col justify-center py-6 px-4 md:px-8"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide9 || "/slide_9.jpg"})`,
                   backgroundSize: "cover",
@@ -934,9 +934,10 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
               >
                 <div
                   ref={slide9Ref}
-                  className={`${isSlide9InView ? "active" : ""} fadeInMove w-full max-w-md md:max-w-2xl mx-auto flex flex-col bg-black/50 backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl`}
+                  className={`${isSlide9InView ? "active" : ""} fadeInMove w-full max-w-md md:max-w-2xl mx-auto flex flex-col bg-black/50 backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl overflow-y-auto`}
+                  style={{ maxHeight: "88vh" }}
                 >
-                  <div className="shrink-0 mb-2 md:mb-4">
+                  <div className="shrink-0 mb-2 md:mb-3">
                     <h1 className="text-xl md:text-3xl text-white font-ovo text-center uppercase tracking-wider">
                       UCAPAN & DOA RESTU
                     </h1>
@@ -950,7 +951,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                       <Form guestName={name} />
                     </div>
                     
-                    <div className="w-full mt-4 shrink-0 border-t border-white/20 pt-4">
+                    <div className="w-full mt-3 shrink-0 border-t border-white/20 pt-3">
                       <div ref={slide10Ref} className="w-full">
                         <div className="bg-white/5 rounded-xl p-2 border border-white/5">
                            <WishesList />
