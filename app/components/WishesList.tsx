@@ -58,7 +58,7 @@ const WishesList = () => {
   const visibleWishes = wishes.filter((w) => w.message && w.message.trim() !== "");
 
   return (
-    <div className="text-white flex flex-col" style={{ minHeight: 0 }}>
+    <div className="text-white flex flex-col flex-1 min-h-0">
       {/* Header refresh */}
       <div className="flex justify-end mb-2 shrink-0">
         <button
@@ -73,8 +73,8 @@ const WishesList = () => {
       {/* Scrollable wishes list */}
       <div
         ref={scrollRef}
-        className="overflow-y-auto flex-1 pr-1"
-        style={{ maxHeight: "220px", scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.2) transparent" }}
+        className="overflow-y-auto flex-1 min-h-0 pr-1"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.2) transparent" }}
       >
         {visibleWishes.length === 0 ? (
           <p className="text-xs">{loading ? "Memuat ucapan..." : "Belum ada ucapan"}</p>

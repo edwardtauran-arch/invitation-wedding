@@ -790,7 +790,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             {(config.weddingGift?.enabled ?? true) && (
               <div
                 id="section-weddingGift"
-                className="snap-start text-neutral-800 bg-[#FAF6F0] h-screen flex flex-col justify-start md:justify-center pt-6 md:pt-6 pb-4 px-4 overflow-y-auto"
+                className="snap-start text-neutral-800 bg-[#FAF6F0] h-screen flex flex-col justify-center pt-3 pb-3 px-4 overflow-hidden"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide8 || "/slide_8.jpg"})`,
                   backgroundSize: "cover",
@@ -799,7 +799,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
               >
                 <div
                   ref={giftRef}
-                  className={`w-full max-w-4xl mx-auto space-y-3 md:space-y-4 fadeInMove flex flex-col h-full justify-start md:justify-center ${isGiftInView ? "active" : ""
+                  className={`w-full max-w-4xl mx-auto space-y-1.5 md:space-y-3 fadeInMove flex flex-col h-auto justify-center ${isGiftInView ? "active" : ""
                     }`}
                 >
                   {/* Title Header */}
@@ -813,17 +813,17 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                   </div>
 
                   {/* Amplop Online */}
-                  <div className="flex flex-col gap-3 md:gap-6 justify-start items-center w-full max-w-4xl mx-auto pb-4">
+                  <div className="flex flex-col gap-2 md:gap-4 justify-start items-center w-full max-w-4xl mx-auto pb-1">
                     
                     {/* Bank Cards List - Stacked on Mobile, Horizontal on Desktop */}
                     <div className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-2.5 md:gap-3 w-full px-2">
                       {bankAccounts.map((acc: { bankName: string; accountNumber: string; accountHolderName: string }, idx: number) => (
                         <div
                           key={idx}
-                          className="bg-gradient-to-br from-[#2c231a] via-[#17120d] to-[#2c231a] border border-[#524536]/20 shadow-xl rounded-xl p-3 md:p-4 text-white w-[260px] md:w-[280px] shrink-0 relative overflow-hidden snap-center"
+                          className="bg-gradient-to-br from-[#2c231a] via-[#17120d] to-[#2c231a] border border-[#524536]/20 shadow-xl rounded-xl p-2.5 md:p-4 text-white w-[250px] md:w-[280px] shrink-0 relative overflow-hidden snap-center"
                         >
                           {/* Logo & Chip */}
-                          <div className="flex justify-between items-center mb-3 md:mb-4">
+                          <div className="flex justify-between items-center mb-2 md:mb-3">
                             {/* Card Chip */}
                             <div className="w-8 h-5 md:w-9 md:h-6 bg-gradient-to-br from-[#ebd094] to-[#a67e3a] rounded border border-white/10 shadow-sm relative overflow-hidden">
                               <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-0.5 opacity-20">
@@ -854,7 +854,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                           </div>
 
                           {/* Account Number */}
-                          <div className="mb-2 md:mb-3">
+                          <div className="mb-1 md:mb-2">
                             <p className="text-base md:text-lg font-mono tracking-widest text-center text-neutral-100">
                               {acc.accountNumber}
                             </p>
@@ -872,7 +872,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                           </div>
 
                           {/* Card Holder */}
-                          <div className="mt-2 md:mt-3 border-t border-white/5 pt-1.5 md:pt-2">
+                          <div className="mt-1 md:mt-2 border-t border-white/5 pt-1 md:pt-1.5">
                             <p className="text-[8px] md:text-[9px] text-neutral-400 uppercase tracking-widest text-center">
                               Nama Pemilik Rekening
                             </p>
@@ -886,10 +886,10 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
 
                     {/* QRIS / Physical Gift Replacement */}
                     <div className="w-full max-w-[340px] md:max-w-[400px]">
-                      <div className="bg-white/10 backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 flex flex-col items-center justify-center shadow-2xl border border-white/20">
+                      <div className="bg-white/10 backdrop-blur-md rounded-2xl md:rounded-3xl p-2 md:p-4 flex flex-col items-center justify-center shadow-2xl border border-white/20">
                         {config.weddingGift?.qrisImage ? (
                           <div 
-                            className="w-full max-w-[220px] md:max-w-[300px] relative flex items-center justify-center bg-white p-3 md:p-4 rounded-xl overflow-hidden shadow-xl aspect-square mb-3 md:mb-5 mx-auto cursor-pointer group"
+                            className="w-full max-w-[155px] md:max-w-[260px] relative flex items-center justify-center bg-white p-2 md:p-3 rounded-xl overflow-hidden shadow-xl aspect-square mb-1.5 md:mb-3 mx-auto cursor-pointer group"
                             onClick={() => setIsQrisEnlarged(true)}
                           >
                             <img
@@ -934,8 +934,8 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
               >
                 <div
                   ref={slide9Ref}
-                  className={`${isSlide9InView ? "active" : ""} fadeInMove w-full max-w-md md:max-w-2xl mx-auto flex flex-col bg-black/50 backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl overflow-y-auto`}
-                  style={{ maxHeight: "88vh" }}
+                  className={`${isSlide9InView ? "active" : ""} fadeInMove w-full max-w-md md:max-w-2xl mx-auto flex flex-col bg-black/50 backdrop-blur-md rounded-2xl md:rounded-3xl p-4 md:p-6 border border-white/10 shadow-2xl`}
+                  style={{ maxHeight: "calc(100dvh - 48px)" }}
                 >
                   <div className="shrink-0 mb-2 md:mb-3">
                     <h1 className="text-xl md:text-3xl text-white font-ovo text-center uppercase tracking-wider">
@@ -946,14 +946,14 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
                     </p>
                   </div>
 
-                  <div className="flex flex-col w-full relative">
+                  <div className="flex flex-col w-full relative flex-1 min-h-0 overflow-hidden">
                     <div className="w-full shrink-0">
                       <Form guestName={name} />
                     </div>
                     
-                    <div className="w-full mt-3 shrink-0 border-t border-white/20 pt-3">
-                      <div ref={slide10Ref} className="w-full">
-                        <div className="bg-white/5 rounded-xl p-2 border border-white/5">
+                    <div className="w-full mt-3 flex-1 min-h-0 flex flex-col border-t border-white/20 pt-3 overflow-hidden">
+                      <div ref={slide10Ref} className="w-full flex-1 min-h-0 flex flex-col">
+                        <div className="bg-white/5 rounded-xl p-2 border border-white/5 flex-1 min-h-0 flex flex-col">
                            <WishesList />
                         </div>
                       </div>
