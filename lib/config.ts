@@ -48,6 +48,7 @@ export const config = {
     },
     thankyou: process.env.NEXT_PUBLIC_THANKYOU || "Default Thank You",
     thankyouDetail: process.env.NEXT_PUBLIC_THANKYOU_DETAIL || "Default Thank You Detail",
+    craftedWithLove: process.env.NEXT_PUBLIC_CRAFTED_WITH_LOVE || "Crafted with Love",
     galleryImages: [
       "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80",
       "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=600&auto=format&fit=crop&q=80",

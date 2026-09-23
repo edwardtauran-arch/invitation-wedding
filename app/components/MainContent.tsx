@@ -995,11 +995,11 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
               </div>
 
               {/* Footer selalu di bawah */}
-              <footer className={`flex flex-col items-center ${
+              <footer className={`flex flex-col items-center justify-center text-center ${
                 (config.closingBoxPosition ?? "bottom") === "top" ? "mt-auto" : "mt-8"
               }`}>
-                <p className="text-xs text-neutral-500 tracking-wider">
-                  Crafted with Love
+                <p className="text-xs text-neutral-500 tracking-wider text-center whitespace-pre-line leading-relaxed">
+                  {config.craftedWithLove || "Crafted with Love"}
                 </p>
               </footer>
             </div>

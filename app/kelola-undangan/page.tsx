@@ -5,8 +5,9 @@ import {
   FaSave, FaPlus, FaTrash, FaWhatsapp, FaCopy, FaEdit,
   FaMusic, FaImage, FaUsers, FaComments, FaCogs, FaCheckCircle,
   FaInfoCircle, FaFileCsv, FaEye, FaEyeSlash, FaHourglassHalf, FaExternalLinkAlt,
-  FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars, FaImages
+  FaLock, FaSignOutAlt, FaCalendarAlt, FaSync, FaTimesCircle, FaBars, FaImages, FaFileExcel
 } from "react-icons/fa";
+import * as XLSX from "xlsx";
 import { extractYoutubeId } from "@/lib/youtube";
 
 interface Settings {
@@ -70,6 +71,7 @@ interface Settings {
   thankyou: string;
   thankyouDetail: string;
   closingBoxPosition?: "top" | "bottom";
+  craftedWithLove?: string;
   musicPath: string;
   slideImages: {
     slide1: string;
@@ -170,6 +172,21 @@ export default function AdminDashboard() {
   // Guest list filters and search
   const [guestSearch, setGuestSearch] = useState("");
   const [guestFilter, setGuestFilter] = useState<"all" | "Belum Dikirim" | "Terkirim">("all");
+  const [guestSort, setGuestSort] = useState<"lama-baru" | "baru-lama">("lama-baru");
+
+  // Pagination - Guests
+  const [guestPage, setGuestPage] = useState(1);
+  const [guestPageSize, setGuestPageSize] = useState<20 | 30 | 50>(20);
+
+  // RSVP sort & pagination
+  const [rsvpSort, setRsvpSort] = useState<"lama-baru" | "baru-lama">("baru-lama");
+  const [rsvpPage, setRsvpPage] = useState(1);
+  const [rsvpPageSize, setRsvpPageSize] = useState<20 | 30 | 50>(20);
+
+  // Wishes sort & pagination
+  const [wishSort, setWishSort] = useState<"lama-baru" | "baru-lama">("baru-lama");
+  const [wishPage, setWishPage] = useState(1);
+  const [wishPageSize, setWishPageSize] = useState<20 | 30 | 50>(20);
 
   // Edit/Add Guest Modal state
   const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
@@ -973,13 +990,99 @@ export default function AdminDashboard() {
     document.body.removeChild(link);
   };
 
-  // Filtered Guests list - sorted ascending (oldest first, as inserted)
-  const filteredGuests = guests.filter(guest => {
-    const matchesSearch = guest.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
-      guest.phone.includes(guestSearch);
-    const matchesFilter = guestFilter === "all" || guest.status === guestFilter;
-    return matchesSearch && matchesFilter;
+  // Excel export for all tabs
+  const exportToExcel = (type: "guests" | "rsvp" | "wishes") => {
+    let sheetData: Record<string, string | number>[] = [];
+    let fileName = "";
+
+    if (type === "guests") {
+      fileName = "daftar_tamu.xlsx";
+      sheetData = guests.map((g, i) => ({
+        "No": i + 1,
+        "Nama Tamu": g.name,
+        "Nomor WhatsApp": g.phone || "-",
+        "Status Kirim": g.status || "Belum Dikirim",
+        "Tanggal Kirim": g.sentAt ? new Date(g.sentAt).toLocaleString("id-ID") : "-",
+      }));
+    } else if (type === "rsvp") {
+      fileName = "data_rsvp.xlsx";
+      sheetData = sortedRsvps.map((w, i) => ({
+        "No": i + 1,
+        "Nama": w.name,
+        "Kehadiran": w.attendance,
+        "Jumlah Tamu": Number(w.guests) || 0,
+        "Tanggal Respon": new Date(w.createdAt).toLocaleString("id-ID"),
+      }));
+    } else if (type === "wishes") {
+      fileName = "data_ucapan.xlsx";
+      sheetData = sortedWishes.map((w, i) => ({
+        "No": i + 1,
+        "Nama": w.name,
+        "Ucapan": w.message,
+        "Tanggal": new Date(w.createdAt).toLocaleString("id-ID"),
+      }));
+    }
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, type === "guests" ? "Tamu" : type === "rsvp" ? "RSVP" : "Ucapan");
+    XLSX.writeFile(wb, fileName);
+  };
+
+  // Filtered & sorted Guests list
+  const filteredGuests = guests
+    .filter(guest => {
+      const matchesSearch = guest.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
+        guest.phone.includes(guestSearch);
+      const matchesFilter = guestFilter === "all" || guest.status === guestFilter;
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      // Fall back to _id comparison (MongoDB ObjectId encodes creation time)
+      const aTime = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0;
+      const bTime = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0;
+      const aVal = aTime || a._id;
+      const bVal = bTime || b._id;
+      if (guestSort === "baru-lama") return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+      return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    });
+
+  const guestTotalPages = Math.max(1, Math.ceil(filteredGuests.length / guestPageSize));
+  const guestPageClamped = Math.min(guestPage, guestTotalPages);
+  const pagedGuests = filteredGuests.slice((guestPageClamped - 1) * guestPageSize, guestPageClamped * guestPageSize);
+
+  // RSVP sorted & paged
+  const sortedRsvps = [...wishes].sort((a, b) => {
+    const aT = new Date(a.createdAt).getTime();
+    const bT = new Date(b.createdAt).getTime();
+    return rsvpSort === "baru-lama" ? bT - aT : aT - bT;
   });
+  const rsvpTotalPages = Math.max(1, Math.ceil(sortedRsvps.length / rsvpPageSize));
+  const rsvpPageClamped = Math.min(rsvpPage, rsvpTotalPages);
+  const pagedRsvps = sortedRsvps.slice((rsvpPageClamped - 1) * rsvpPageSize, rsvpPageClamped * rsvpPageSize);
+
+  // Wishes sorted & paged (only with non-empty message)
+  const validWishes = wishes.filter(w => w.message && w.message.trim() !== "");
+  const sortedWishes = [...validWishes].sort((a, b) => {
+    const aT = new Date(a.createdAt).getTime();
+    const bT = new Date(b.createdAt).getTime();
+    return wishSort === "baru-lama" ? bT - aT : aT - bT;
+  });
+  const wishTotalPages = Math.max(1, Math.ceil(sortedWishes.length / wishPageSize));
+  const wishPageClamped = Math.min(wishPage, wishTotalPages);
+  const pagedWishes = sortedWishes.slice((wishPageClamped - 1) * wishPageSize, wishPageClamped * wishPageSize);
+
+  // Pagination page numbers with ellipsis
+  const getPaginationPages = (current: number, total: number): (number | "...")[] => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [];
+    pages.push(1);
+    if (current > 3) pages.push("...");
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2) pages.push("...");
+    pages.push(total);
+    return pages;
+  };
 
   if (checkingAuth) {
     return (
@@ -2012,6 +2115,19 @@ export default function AdminDashboard() {
                             </div>
                             <p className="text-[10px] text-neutral-500 mt-2">Atur posisi kotak teks agar foto tidak tertutup.</p>
                           </div>
+
+                          {/* FOOTER / WATERMARK (CRAFTED WITH LOVE) */}
+                          <div>
+                            <label className="block text-xs font-semibold text-neutral-400 mb-2 uppercase tracking-wide">Teks Footer / Watermark (Slide Terakhir)</label>
+                            <textarea
+                              rows={3}
+                              value={settings.craftedWithLove ?? "Crafted with Love"}
+                              onChange={(e) => handleUpdateField("craftedWithLove", e.target.value)}
+                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white transition-all text-sm"
+                              placeholder="Contoh: Crafted with Love&#10;by Edward & Dian"
+                            />
+                            <p className="text-[10px] text-neutral-500 mt-1">Bisa multi-baris (tekan Enter untuk baris baru), teks akan otomatis rata tengah (center).</p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -2961,6 +3077,15 @@ export default function AdminDashboard() {
                         <span>Hapus {selectedGuests.length} Data</span>
                       </button>
                     )}
+                    {guests.length > 0 && (
+                      <button
+                        onClick={() => exportToExcel("guests")}
+                        className="flex items-center gap-x-2 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/40 border border-emerald-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                      >
+                        <FaFileExcel className="w-4 h-4" />
+                        <span className="hidden md:inline">Ekspor Excel</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -2971,33 +3096,48 @@ export default function AdminDashboard() {
                       type="text"
                       placeholder="Cari nama atau nomor telepon..."
                       value={guestSearch}
-                      onChange={(e) => setGuestSearch(e.target.value)}
+                      onChange={(e) => { setGuestSearch(e.target.value); setGuestPage(1); }}
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white transition-all text-sm"
                     />
                   </div>
 
-                  <div className="flex gap-x-2 w-full md:w-auto">
+                  <div className="flex gap-x-2 w-full md:w-auto flex-wrap items-center">
+                    {/* Status filter buttons */}
                     <button
-                      onClick={() => setGuestFilter("all")}
+                      onClick={() => { setGuestFilter("all"); setGuestPage(1); }}
                       className={`flex-1 md:flex-initial px-4 py-1.5 rounded-lg text-xs transition ${guestFilter === "all" ? "bg-white text-black font-semibold" : "text-neutral-400 bg-neutral-950 border border-neutral-800 hover:text-white"
                         }`}
                     >
                       Semua
                     </button>
                     <button
-                      onClick={() => setGuestFilter("Belum Dikirim")}
+                      onClick={() => { setGuestFilter("Belum Dikirim"); setGuestPage(1); }}
                       className={`flex-1 md:flex-initial px-4 py-1.5 rounded-lg text-xs transition ${guestFilter === "Belum Dikirim" ? "bg-white text-black font-semibold" : "text-neutral-400 bg-neutral-950 border border-neutral-800 hover:text-white"
                         }`}
                     >
                       Belum Dikirim
                     </button>
                     <button
-                      onClick={() => setGuestFilter("Terkirim")}
+                      onClick={() => { setGuestFilter("Terkirim"); setGuestPage(1); }}
                       className={`flex-1 md:flex-initial px-4 py-1.5 rounded-lg text-xs transition ${guestFilter === "Terkirim" ? "bg-white text-black font-semibold" : "text-neutral-400 bg-neutral-950 border border-neutral-800 hover:text-white"
                         }`}
                     >
                       Terkirim
                     </button>
+
+                    {/* Sort dropdown */}
+                    <div className="relative">
+                      <select
+                        id="guest-sort-select"
+                        value={guestSort}
+                        onChange={(e) => { setGuestSort(e.target.value as "lama-baru" | "baru-lama"); setGuestPage(1); }}
+                        className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
+                      >
+                        <option value="lama-baru">⬆ Lama → Baru</option>
+                        <option value="baru-lama">⬇ Baru → Lama</option>
+                      </select>
+                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                    </div>
                   </div>
                 </div>
 
@@ -3010,12 +3150,12 @@ export default function AdminDashboard() {
                           <th className="px-6 py-4 w-12">
                             <input
                               type="checkbox"
-                              checked={filteredGuests.length > 0 && selectedGuests.length === filteredGuests.length}
+                              checked={pagedGuests.length > 0 && pagedGuests.every(g => selectedGuests.includes(g._id))}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSelectedGuests(filteredGuests.map(g => g._id));
+                                  setSelectedGuests(prev => Array.from(new Set([...prev, ...pagedGuests.map(g => g._id)])));
                                 } else {
-                                  setSelectedGuests([]);
+                                  setSelectedGuests(prev => prev.filter(id => !pagedGuests.some(g => g._id === id)));
                                 }
                               }}
                               className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
@@ -3029,14 +3169,14 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-neutral-800/60">
-                        {filteredGuests.length === 0 ? (
+                        {pagedGuests.length === 0 ? (
                           <tr>
                             <td colSpan={6} className="px-6 py-12 text-center text-neutral-500 font-legan">
                               Tidak ada data tamu yang cocok dengan filter atau pencarian.
                             </td>
                           </tr>
                         ) : (
-                          filteredGuests.map((guest) => {
+                          pagedGuests.map((guest) => {
                             const guestInviteUrl = `/?to=${encodeURIComponent(guest.name.toLowerCase()).replace(/%20/g, '+')}`;
                             return (
                               <tr key={guest._id} className="hover:bg-neutral-950/20 transition-all">
@@ -3131,6 +3271,74 @@ export default function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Pagination Controls */}
+                  {filteredGuests.length > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-neutral-800/60">
+                      {/* Info + per-page selector */}
+                      <div className="flex items-center gap-x-3 text-xs text-neutral-400">
+                        <span>
+                          {filteredGuests.length === guests.length
+                            ? `Menampilkan ${Math.min((guestPageClamped - 1) * guestPageSize + 1, filteredGuests.length)}–${Math.min(guestPageClamped * guestPageSize, filteredGuests.length)} dari ${filteredGuests.length} tamu`
+                            : `${filteredGuests.length} tamu (filter aktif)`}
+                        </span>
+                        <span className="text-neutral-700">|</span>
+                        <label htmlFor="guest-page-size" className="text-neutral-500">Tampil:</label>
+                        <select
+                          id="guest-page-size"
+                          value={guestPageSize}
+                          onChange={(e) => { setGuestPageSize(Number(e.target.value) as 20 | 30 | 50); setGuestPage(1); }}
+                          className="bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-md px-2 py-1 focus:outline-none focus:border-white transition cursor-pointer"
+                        >
+                          <option value={20}>20 / halaman</option>
+                          <option value={30}>30 / halaman</option>
+                          <option value={50}>50 / halaman</option>
+                        </select>
+                      </div>
+
+                      {/* Page navigation */}
+                      {guestTotalPages > 1 && (
+                        <div className="flex items-center gap-x-1">
+                          {/* Prev */}
+                          <button
+                            onClick={() => setGuestPage(p => Math.max(1, p - 1))}
+                            disabled={guestPageClamped === 1}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs"
+                          >
+                            ‹
+                          </button>
+
+                          {/* Page numbers */}
+                          {getPaginationPages(guestPageClamped, guestTotalPages).map((page, idx) =>
+                            page === "..." ? (
+                              <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-neutral-600 text-xs">…</span>
+                            ) : (
+                              <button
+                                key={page}
+                                onClick={() => setGuestPage(page as number)}
+                                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition ${
+                                  guestPageClamped === page
+                                    ? "bg-white text-black shadow-md"
+                                    : "border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            )
+                          )}
+
+                          {/* Next */}
+                          <button
+                            onClick={() => setGuestPage(p => Math.min(guestTotalPages, p + 1))}
+                            disabled={guestPageClamped === guestTotalPages}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs"
+                          >
+                            ›
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -3157,11 +3365,11 @@ export default function AdminDashboard() {
                       </button>
                       {wishes.length > 0 && (
                         <button
-                          onClick={exportWishesToCSV}
-                          className="flex items-center gap-x-2 bg-white text-black hover:bg-neutral-200 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                          onClick={() => exportToExcel("rsvp")}
+                          className="flex items-center gap-x-2 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/40 border border-emerald-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
                         >
-                          <FaFileCsv className="w-4 h-4" />
-                          <span>Ekspor Ke CSV</span>
+                          <FaFileExcel className="w-4 h-4" />
+                          <span className="hidden md:inline">Ekspor Excel</span>
                         </button>
                       )}
                       {selectedRsvps.length > 0 && (
@@ -3198,41 +3406,59 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  {/* Sort bar */}
+                  <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl flex items-center justify-between backdrop-blur-md">
+                    <span className="text-xs text-neutral-500">{wishes.length} respon RSVP</span>
+                    <div className="relative">
+                      <select
+                        id="rsvp-sort-select"
+                        value={rsvpSort}
+                        onChange={(e) => { setRsvpSort(e.target.value as "lama-baru" | "baru-lama"); setRsvpPage(1); }}
+                        className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
+                      >
+                        <option value="baru-lama">⬇ Baru → Lama</option>
+                        <option value="lama-baru">⬆ Lama → Baru</option>
+                      </select>
+                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                    </div>
+                  </div>
+
                   {/* RSVP Table */}
-                  <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md p-6">
-                    <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)]">
+                  <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md">
+                    <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-380px)]">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="border-b border-neutral-800 text-neutral-400 text-sm">
-                            <th className="pb-3 font-semibold w-12">
+                          <tr className="border-b border-neutral-800 text-neutral-400 text-sm bg-neutral-950 sticky top-0 z-10">
+                            <th className="px-6 py-4 font-semibold w-12">
                               <input
                                 type="checkbox"
-                                checked={wishes.length > 0 && selectedRsvps.length === wishes.length}
+                                checked={pagedRsvps.length > 0 && pagedRsvps.every(w => selectedRsvps.includes(w._id))}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setSelectedRsvps(wishes.map(w => w._id));
+                                    setSelectedRsvps(prev => Array.from(new Set([...prev, ...pagedRsvps.map(w => w._id)])));
                                   } else {
-                                    setSelectedRsvps([]);
+                                    setSelectedRsvps(prev => prev.filter(id => !pagedRsvps.some(w => w._id === id)));
                                   }
                                 }}
                                 className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
                               />
                             </th>
-                            <th className="pb-3 font-semibold w-1/3">Nama</th>
-                            <th className="pb-3 font-semibold">Kehadiran</th>
-                            <th className="pb-3 font-semibold">Jumlah Tamu</th>
-                            <th className="pb-3 font-semibold text-right">Aksi</th>
+                            <th className="px-6 py-4 font-semibold">Nama</th>
+                            <th className="px-6 py-4 font-semibold">Kehadiran</th>
+                            <th className="px-6 py-4 font-semibold">Jumlah Tamu</th>
+                            <th className="px-6 py-4 font-semibold">Tanggal Respon</th>
+                            <th className="px-6 py-4 font-semibold text-right">Aksi</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-800/60 text-sm text-neutral-300">
-                          {wishes.length === 0 ? (
+                          {pagedRsvps.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="py-6 text-center text-neutral-500">Belum ada respon RSVP</td>
+                              <td colSpan={6} className="py-8 text-center text-neutral-500">Belum ada respon RSVP</td>
                             </tr>
                           ) : (
-                            wishes.map((wish) => (
+                            pagedRsvps.map((wish) => (
                               <tr key={`rsvp-${wish._id}`} className="hover:bg-neutral-800/20 transition-colors">
-                                <td className="py-3">
+                                <td className="px-6 py-4">
                                   <input
                                     type="checkbox"
                                     checked={selectedRsvps.includes(wish._id)}
@@ -3246,18 +3472,22 @@ export default function AdminDashboard() {
                                     className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
                                   />
                                 </td>
-                                <td className="py-3 font-medium text-white">{wish.name}</td>
-                                <td className="py-3">
-                                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${wish.attendance === "Hadir" ? "bg-green-500/20 text-green-400" :
+                                <td className="px-6 py-4 font-medium text-white">{wish.name}</td>
+                                <td className="px-6 py-4">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                    wish.attendance === "Hadir" ? "bg-green-500/20 text-green-400" :
                                     wish.attendance === "Tidak Hadir" ? "bg-red-500/20 text-red-400" :
-                                      wish.attendance === "Masih Ragu" ? "bg-yellow-500/20 text-yellow-400" :
-                                        "bg-neutral-500/20 text-neutral-400"
-                                    }`}>
+                                    wish.attendance === "Masih Ragu" ? "bg-yellow-500/20 text-yellow-400" :
+                                    "bg-neutral-500/20 text-neutral-400"
+                                  }`}>
                                     {wish.attendance}
                                   </span>
                                 </td>
-                                <td className="py-3">{wish.guests} Orang</td>
-                                <td className="py-3 text-right">
+                                <td className="px-6 py-4">{wish.guests} Orang</td>
+                                <td className="px-6 py-4 text-neutral-500 text-xs font-mono">
+                                  {new Date(wish.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                </td>
+                                <td className="px-6 py-4 text-right">
                                   <button
                                     onClick={() => handleDeleteWish(wish._id)}
                                     className="p-2 text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 hover:border-red-900 rounded-lg transition"
@@ -3272,6 +3502,56 @@ export default function AdminDashboard() {
                         </tbody>
                       </table>
                     </div>
+
+                    {/* RSVP Pagination */}
+                    {wishes.length > 0 && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-neutral-800/60">
+                        <div className="flex items-center gap-x-3 text-xs text-neutral-400">
+                          <span>
+                            {`Menampilkan ${Math.min((rsvpPageClamped - 1) * rsvpPageSize + 1, wishes.length)}–${Math.min(rsvpPageClamped * rsvpPageSize, wishes.length)} dari ${wishes.length} respon`}
+                          </span>
+                          <span className="text-neutral-700">|</span>
+                          <label htmlFor="rsvp-page-size" className="text-neutral-500">Tampil:</label>
+                          <select
+                            id="rsvp-page-size"
+                            value={rsvpPageSize}
+                            onChange={(e) => { setRsvpPageSize(Number(e.target.value) as 20 | 30 | 50); setRsvpPage(1); }}
+                            className="bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-md px-2 py-1 focus:outline-none focus:border-white transition cursor-pointer"
+                          >
+                            <option value={20}>20 / halaman</option>
+                            <option value={30}>30 / halaman</option>
+                            <option value={50}>50 / halaman</option>
+                          </select>
+                        </div>
+                        {rsvpTotalPages > 1 && (
+                          <div className="flex items-center gap-x-1">
+                            <button
+                              onClick={() => setRsvpPage(p => Math.max(1, p - 1))}
+                              disabled={rsvpPageClamped === 1}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs"
+                            >‹</button>
+                            {getPaginationPages(rsvpPageClamped, rsvpTotalPages).map((page, idx) =>
+                              page === "..." ? (
+                                <span key={`rsvp-ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-neutral-600 text-xs">…</span>
+                              ) : (
+                                <button
+                                  key={`rsvp-page-${page}`}
+                                  onClick={() => setRsvpPage(page as number)}
+                                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition ${
+                                    rsvpPageClamped === page ? "bg-white text-black shadow-md" : "border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600"
+                                  }`}
+                                >{page}</button>
+                              )
+                            )}
+                            <button
+                              onClick={() => setRsvpPage(p => Math.min(rsvpTotalPages, p + 1))}
+                              disabled={rsvpPageClamped === rsvpTotalPages}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs"
+                            >›</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3285,7 +3565,8 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-xl font-ovo text-white uppercase tracking-wider">Ucapan & Doa Restu</h2>
+                      <h2 className="text-xl font-ovo text-white uppercase tracking-wider">Ucapan &amp; Doa Restu</h2>
+                      <p className="text-xs text-neutral-400">Total ucapan: {validWishes.length}</p>
                     </div>
                     <div className="flex gap-x-2">
                       <button
@@ -3296,7 +3577,16 @@ export default function AdminDashboard() {
                         <FaSync className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
                         <span className="hidden md:inline">{isRefreshing ? "Menyegarkan..." : "Refresh"}</span>
                       </button>
-                      {wishes.length > 0 && (
+                      {validWishes.length > 0 && (
+                        <button
+                          onClick={() => exportToExcel("wishes")}
+                          className="flex items-center gap-x-2 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/40 border border-emerald-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
+                        >
+                          <FaFileExcel className="w-4 h-4" />
+                          <span className="hidden md:inline">Ekspor Excel</span>
+                        </button>
+                      )}
+                      {validWishes.length > 0 && (
                         <button
                           onClick={selectedWishes.length > 0 ? () => handleBulkDeleteWishes(selectedWishes, setSelectedWishes) : handleClearWishes}
                           className="flex items-center gap-x-2 bg-red-950/40 text-red-400 hover:bg-red-900/40 border border-red-900/50 transition font-bold px-4 py-2 rounded-lg text-sm shadow-md"
@@ -3308,70 +3598,142 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Wishes list */}
-                  <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md p-6">
-                    <div className="mb-4 flex items-center">
-                      <label className="flex items-center gap-x-2 text-sm text-neutral-400 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={wishes.filter(w => w.message && w.message.trim() !== "").length > 0 && selectedWishes.length === wishes.filter(w => w.message && w.message.trim() !== "").length}
-                          onChange={(e) => {
-                            const validWishes = wishes.filter(w => w.message && w.message.trim() !== "");
-                            if (e.target.checked) {
-                              setSelectedWishes(validWishes.map(w => w._id));
-                            } else {
-                              setSelectedWishes([]);
-                            }
-                          }}
-                          className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
-                        />
-                        <span>Pilih Semua Ucapan</span>
-                      </label>
-                    </div>
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 divide-y divide-neutral-800/60">
-                      {wishes.filter(w => w.message && w.message.trim() !== "").length === 0 ? (
-                        <p className="text-neutral-500 text-center py-10">Belum ada ucapan yang masuk.</p>
-                      ) : (
-                        wishes.filter(w => w.message && w.message.trim() !== "").map((wish, index) => (
-                          <div key={wish._id} className={`pt-4 ${index === 0 ? "pt-0" : ""} flex flex-col md:flex-row md:items-center justify-between gap-4 group`}>
-                            <div className="flex items-start gap-x-4">
+                  {/* Wishes Table */}
+                  <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md">
+                    <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-380px)]">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-neutral-800 text-neutral-400 text-sm bg-neutral-950 sticky top-0 z-10">
+                            <th className="px-6 py-4 font-semibold w-12">
                               <input
                                 type="checkbox"
-                                checked={selectedWishes.includes(wish._id)}
+                                checked={pagedWishes.length > 0 && pagedWishes.every(w => selectedWishes.includes(w._id))}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    setSelectedWishes(prev => [...prev, wish._id]);
+                                    setSelectedWishes(prev => Array.from(new Set([...prev, ...pagedWishes.map(w => w._id)])));
                                   } else {
-                                    setSelectedWishes(prev => prev.filter(id => id !== wish._id));
+                                    setSelectedWishes(prev => prev.filter(id => !pagedWishes.some(w => w._id === id)));
                                   }
                                 }}
-                                className="mt-1 rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                                className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
                               />
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-x-2">
-                                  <strong className="text-white text-sm">{wish.name}</strong>
+                            </th>
+                            <th className="px-6 py-4 font-semibold w-1/4">Nama</th>
+                            <th className="px-6 py-4 font-semibold">Ucapan</th>
+                            <th className="px-6 py-4 font-semibold w-36">
+                              <div className="flex items-center gap-x-2">
+                                <span>Tanggal</span>
+                                <div className="relative">
+                                  <select
+                                    id="wish-sort-select"
+                                    value={wishSort}
+                                    onChange={(e) => { setWishSort(e.target.value as "lama-baru" | "baru-lama"); setWishPage(1); }}
+                                    className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded px-2 py-0.5 pr-5 focus:outline-none focus:border-white transition cursor-pointer hover:border-neutral-600"
+                                  >
+                                    <option value="baru-lama">⬇ Baru</option>
+                                    <option value="lama-baru">⬆ Lama</option>
+                                  </select>
+                                  <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-neutral-500 text-[9px]">▼</span>
                                 </div>
-                                <p className="text-xs text-neutral-400 font-mono">
-                                  {new Date(wish.createdAt).toLocaleString()}
-                                </p>
-                                <p className="text-sm text-neutral-300 italic pt-1">
-                                  &ldquo;{wish.message}&rdquo;
-                                </p>
                               </div>
-                            </div>
-                            <div className="shrink-0 flex items-center">
-                              <button
-                                onClick={() => handleDeleteWish(wish._id)}
-                                className="p-2 text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 hover:border-red-900 rounded-lg transition"
-                                title="Hapus Ucapan"
-                              >
-                                <FaTrash className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      )}
+                            </th>
+                            <th className="px-6 py-4 font-semibold text-right">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-800/60 text-sm text-neutral-300">
+                          {pagedWishes.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-8 text-center text-neutral-500">Belum ada ucapan yang masuk.</td>
+                            </tr>
+                          ) : (
+                            pagedWishes.map((wish) => (
+                              <tr key={wish._id} className="hover:bg-neutral-800/20 transition-colors">
+                                <td className="px-6 py-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedWishes.includes(wish._id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedWishes(prev => [...prev, wish._id]);
+                                      } else {
+                                        setSelectedWishes(prev => prev.filter(id => id !== wish._id));
+                                      }
+                                    }}
+                                    className="rounded bg-neutral-900 border-neutral-700 text-neutral-500 focus:ring-0"
+                                  />
+                                </td>
+                                <td className="px-6 py-4 font-medium text-white">{wish.name}</td>
+                                <td className="px-6 py-4 text-neutral-300 italic">
+                                  <span className="line-clamp-2">&ldquo;{wish.message}&rdquo;</span>
+                                </td>
+                                <td className="px-6 py-4 text-neutral-500 text-xs font-mono">
+                                  {new Date(wish.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <button
+                                    onClick={() => handleDeleteWish(wish._id)}
+                                    className="p-2 text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 hover:border-red-900 rounded-lg transition"
+                                    title="Hapus Ucapan"
+                                  >
+                                    <FaTrash className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
+
+                    {/* Wishes Pagination */}
+                    {validWishes.length > 0 && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-neutral-800/60">
+                        <div className="flex items-center gap-x-3 text-xs text-neutral-400">
+                          <span>
+                            {`Menampilkan ${Math.min((wishPageClamped - 1) * wishPageSize + 1, validWishes.length)}–${Math.min(wishPageClamped * wishPageSize, validWishes.length)} dari ${validWishes.length} ucapan`}
+                          </span>
+                          <span className="text-neutral-700">|</span>
+                          <label htmlFor="wish-page-size" className="text-neutral-500">Tampil:</label>
+                          <select
+                            id="wish-page-size"
+                            value={wishPageSize}
+                            onChange={(e) => { setWishPageSize(Number(e.target.value) as 20 | 30 | 50); setWishPage(1); }}
+                            className="bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-md px-2 py-1 focus:outline-none focus:border-white transition cursor-pointer"
+                          >
+                            <option value={20}>20 / halaman</option>
+                            <option value={30}>30 / halaman</option>
+                            <option value={50}>50 / halaman</option>
+                          </select>
+                        </div>
+                        {wishTotalPages > 1 && (
+                          <div className="flex items-center gap-x-1">
+                            <button
+                              onClick={() => setWishPage(p => Math.max(1, p - 1))}
+                              disabled={wishPageClamped === 1}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs"
+                            >‹</button>
+                            {getPaginationPages(wishPageClamped, wishTotalPages).map((page, idx) =>
+                              page === "..." ? (
+                                <span key={`wish-ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-neutral-600 text-xs">…</span>
+                              ) : (
+                                <button
+                                  key={`wish-page-${page}`}
+                                  onClick={() => setWishPage(page as number)}
+                                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition ${
+                                    wishPageClamped === page ? "bg-white text-black shadow-md" : "border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600"
+                                  }`}
+                                >{page}</button>
+                              )
+                            )}
+                            <button
+                              onClick={() => setWishPage(p => Math.min(wishTotalPages, p + 1))}
+                              disabled={wishPageClamped === wishTotalPages}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 disabled:opacity-30 disabled:cursor-not-allowed transition text-xs"
+                            >›</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

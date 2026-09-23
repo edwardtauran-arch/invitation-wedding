@@ -80,6 +80,8 @@ const settingsSchema = new Schema(
     // Thank You Section
     thankyou: { type: String, default: "Thank You For Your attendance" },
     thankyouDetail: { type: String, default: "" },
+    closingBoxPosition: { type: String, default: "bottom" },
+    craftedWithLove: { type: String, default: "Crafted with Love" },
 
     // Media Assets
     musicPath: { type: String, default: "/music/wedding_song.mp3" },
