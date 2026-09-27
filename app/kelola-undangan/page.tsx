@@ -178,8 +178,10 @@ export default function AdminDashboard() {
   const [guestPage, setGuestPage] = useState(1);
   const [guestPageSize, setGuestPageSize] = useState<20 | 30 | 50>(20);
 
-  // RSVP sort & pagination
+  // RSVP sort, filter & pagination
   const [rsvpSort, setRsvpSort] = useState<"lama-baru" | "baru-lama">("baru-lama");
+  const [rsvpAttendanceFilter, setRsvpAttendanceFilter] = useState<"semua" | "Hadir" | "Tidak Hadir">("semua");
+  const [rsvpGuestsFilter, setRsvpGuestsFilter] = useState<"semua" | "1" | "2">("semua");
   const [rsvpPage, setRsvpPage] = useState(1);
   const [rsvpPageSize, setRsvpPageSize] = useState<20 | 30 | 50>(20);
 
@@ -1051,8 +1053,14 @@ export default function AdminDashboard() {
   const guestPageClamped = Math.min(guestPage, guestTotalPages);
   const pagedGuests = filteredGuests.slice((guestPageClamped - 1) * guestPageSize, guestPageClamped * guestPageSize);
 
-  // RSVP sorted & paged
-  const sortedRsvps = [...wishes].sort((a, b) => {
+  // RSVP filtered, sorted & paged
+  const filteredRsvps = wishes.filter(w => {
+    if (rsvpAttendanceFilter !== "semua" && w.attendance !== rsvpAttendanceFilter) return false;
+    if (rsvpGuestsFilter === "1" && Number(w.guests) !== 1) return false;
+    if (rsvpGuestsFilter === "2" && Number(w.guests) !== 2) return false;
+    return true;
+  });
+  const sortedRsvps = [...filteredRsvps].sort((a, b) => {
     const aT = new Date(a.createdAt).getTime();
     const bT = new Date(b.createdAt).getTime();
     return rsvpSort === "baru-lama" ? bT - aT : aT - bT;
@@ -3406,20 +3414,74 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Sort bar */}
-                  <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl flex items-center justify-between backdrop-blur-md">
-                    <span className="text-xs text-neutral-500">{wishes.length} respon RSVP</span>
-                    <div className="relative">
-                      <select
-                        id="rsvp-sort-select"
-                        value={rsvpSort}
-                        onChange={(e) => { setRsvpSort(e.target.value as "lama-baru" | "baru-lama"); setRsvpPage(1); }}
-                        className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
-                      >
-                        <option value="baru-lama">⬇ Baru → Lama</option>
-                        <option value="lama-baru">⬆ Lama → Baru</option>
-                      </select>
-                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                  {/* Filter & Sort bar */}
+                  <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl flex flex-col gap-3 backdrop-blur-md">
+                    {/* Row 1: counts + sort */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-neutral-500">
+                        {filteredRsvps.length !== wishes.length
+                          ? <>{filteredRsvps.length} <span className="text-neutral-600">/ {wishes.length}</span> respon RSVP</>
+                          : <>{wishes.length} respon RSVP</>}
+                      </span>
+                      <div className="relative">
+                        <select
+                          id="rsvp-sort-select"
+                          value={rsvpSort}
+                          onChange={(e) => { setRsvpSort(e.target.value as "lama-baru" | "baru-lama"); setRsvpPage(1); }}
+                          className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
+                        >
+                          <option value="baru-lama">⬇ Baru → Lama</option>
+                          <option value="lama-baru">⬆ Lama → Baru</option>
+                        </select>
+                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Kehadiran filter pills */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold shrink-0">Kehadiran:</span>
+                      {(["semua", "Hadir", "Tidak Hadir"] as const).map((opt) => {
+                        const count = opt === "semua" ? wishes.length
+                          : wishes.filter(w => w.attendance === opt).length;
+                        const active = rsvpAttendanceFilter === opt;
+                        const color = opt === "Hadir" ? (active ? "bg-green-600 text-white border-green-500" : "border-green-900/50 text-green-500 hover:bg-green-900/30")
+                          : opt === "Tidak Hadir" ? (active ? "bg-red-700 text-white border-red-500" : "border-red-900/50 text-red-500 hover:bg-red-900/30")
+                          : (active ? "bg-neutral-700 text-white border-neutral-500" : "border-neutral-700 text-neutral-400 hover:bg-neutral-800");
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => { setRsvpAttendanceFilter(opt); setRsvpPage(1); }}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border transition-all font-medium ${color}`}
+                          >
+                            {opt === "semua" ? "Semua" : opt}
+                            <span className={`text-[10px] ${active ? "opacity-80" : "opacity-50"}`}>({count})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Row 3: Jumlah Tamu filter pills */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold shrink-0">Jml Tamu:</span>
+                      {(["semua", "1", "2"] as const).map((opt) => {
+                        const count = opt === "semua" ? wishes.length
+                          : wishes.filter(w => Number(w.guests) === Number(opt)).length;
+                        const active = rsvpGuestsFilter === opt;
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => { setRsvpGuestsFilter(opt); setRsvpPage(1); }}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border transition-all font-medium ${
+                              active
+                                ? "bg-neutral-700 text-white border-neutral-500"
+                                : "border-neutral-700 text-neutral-400 hover:bg-neutral-800"
+                            }`}
+                          >
+                            {opt === "semua" ? "Semua" : `${opt} Orang`}
+                            <span className={`text-[10px] ${active ? "opacity-80" : "opacity-50"}`}>({count})</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -3504,11 +3566,11 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* RSVP Pagination */}
-                    {wishes.length > 0 && (
+                    {sortedRsvps.length > 0 && (
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t border-neutral-800/60">
                         <div className="flex items-center gap-x-3 text-xs text-neutral-400">
                           <span>
-                            {`Menampilkan ${Math.min((rsvpPageClamped - 1) * rsvpPageSize + 1, wishes.length)}–${Math.min(rsvpPageClamped * rsvpPageSize, wishes.length)} dari ${wishes.length} respon`}
+                            {`Menampilkan ${Math.min((rsvpPageClamped - 1) * rsvpPageSize + 1, sortedRsvps.length)}–${Math.min(rsvpPageClamped * rsvpPageSize, sortedRsvps.length)} dari ${sortedRsvps.length} respon`}
                           </span>
                           <span className="text-neutral-700">|</span>
                           <label htmlFor="rsvp-page-size" className="text-neutral-500">Tampil:</label>
