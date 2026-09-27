@@ -3100,13 +3100,26 @@ export default function AdminDashboard() {
                 {/* Filters and search bar */}
                 <div className="bg-neutral-900/60 border border-neutral-800/80 p-4 rounded-xl flex flex-col md:flex-row gap-4 items-center justify-between backdrop-blur-md">
                   <div className="w-full md:w-1/3">
-                    <input
-                      type="text"
-                      placeholder="Cari nama atau nomor telepon..."
-                      value={guestSearch}
-                      onChange={(e) => { setGuestSearch(e.target.value); setGuestPage(1); }}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-white transition-all text-sm"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Cari nama atau nomor telepon..."
+                        value={guestSearch}
+                        onChange={(e) => { setGuestSearch(e.target.value); setGuestPage(1); }}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 pr-8 text-white focus:outline-none focus:border-white transition-all text-sm"
+                      />
+                      {guestSearch && (
+                        <button
+                          onClick={() => { setGuestSearch(""); setGuestPage(1); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                          title="Hapus pencarian"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-x-2 w-full md:w-auto flex-wrap items-center">
