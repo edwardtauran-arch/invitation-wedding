@@ -3415,73 +3415,67 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Filter & Sort bar */}
-                  <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl flex flex-col gap-3 backdrop-blur-md">
-                    {/* Row 1: counts + sort */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-neutral-500">
+                  <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl backdrop-blur-md">
+                    <div className="flex flex-wrap items-center gap-2 justify-between">
+                      {/* Count */}
+                      <span className="text-xs text-neutral-500 shrink-0">
                         {filteredRsvps.length !== wishes.length
-                          ? <>{filteredRsvps.length} <span className="text-neutral-600">/ {wishes.length}</span> respon RSVP</>
-                          : <>{wishes.length} respon RSVP</>}
+                          ? <>{filteredRsvps.length} <span className="text-neutral-600">/ {wishes.length}</span> respon</>
+                          : <>{wishes.length} respon</>}
                       </span>
-                      <div className="relative">
-                        <select
-                          id="rsvp-sort-select"
-                          value={rsvpSort}
-                          onChange={(e) => { setRsvpSort(e.target.value as "lama-baru" | "baru-lama"); setRsvpPage(1); }}
-                          className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
-                        >
-                          <option value="baru-lama">⬇ Baru → Lama</option>
-                          <option value="lama-baru">⬆ Lama → Baru</option>
-                        </select>
-                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
-                      </div>
-                    </div>
 
-                    {/* Row 2: Kehadiran filter pills */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold shrink-0">Kehadiran:</span>
-                      {(["semua", "Hadir", "Tidak Hadir"] as const).map((opt) => {
-                        const count = opt === "semua" ? wishes.length
-                          : wishes.filter(w => w.attendance === opt).length;
-                        const active = rsvpAttendanceFilter === opt;
-                        const color = opt === "Hadir" ? (active ? "bg-green-600 text-white border-green-500" : "border-green-900/50 text-green-500 hover:bg-green-900/30")
-                          : opt === "Tidak Hadir" ? (active ? "bg-red-700 text-white border-red-500" : "border-red-900/50 text-red-500 hover:bg-red-900/30")
-                          : (active ? "bg-neutral-700 text-white border-neutral-500" : "border-neutral-700 text-neutral-400 hover:bg-neutral-800");
-                        return (
-                          <button
-                            key={opt}
-                            onClick={() => { setRsvpAttendanceFilter(opt); setRsvpPage(1); }}
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border transition-all font-medium ${color}`}
+                      {/* Dropdowns */}
+                      <div className="flex flex-wrap gap-2">
+                        {/* Sort */}
+                        <div className="relative">
+                          <select
+                            id="rsvp-sort-select"
+                            value={rsvpSort}
+                            onChange={(e) => { setRsvpSort(e.target.value as "lama-baru" | "baru-lama"); setRsvpPage(1); }}
+                            className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
                           >
-                            {opt === "semua" ? "Semua" : opt}
-                            <span className={`text-[10px] ${active ? "opacity-80" : "opacity-50"}`}>({count})</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                            <option value="baru-lama">⬇ Baru → Lama</option>
+                            <option value="lama-baru">⬆ Lama → Baru</option>
+                          </select>
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                        </div>
 
-                    {/* Row 3: Jumlah Tamu filter pills */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold shrink-0">Jml Tamu:</span>
-                      {(["semua", "1", "2"] as const).map((opt) => {
-                        const count = opt === "semua" ? wishes.length
-                          : wishes.filter(w => Number(w.guests) === Number(opt)).length;
-                        const active = rsvpGuestsFilter === opt;
-                        return (
-                          <button
-                            key={opt}
-                            onClick={() => { setRsvpGuestsFilter(opt); setRsvpPage(1); }}
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs border transition-all font-medium ${
-                              active
-                                ? "bg-neutral-700 text-white border-neutral-500"
-                                : "border-neutral-700 text-neutral-400 hover:bg-neutral-800"
+                        {/* Kehadiran */}
+                        <div className="relative">
+                          <select
+                            id="rsvp-attendance-filter"
+                            value={rsvpAttendanceFilter}
+                            onChange={(e) => { setRsvpAttendanceFilter(e.target.value as "semua" | "Hadir" | "Tidak Hadir"); setRsvpPage(1); }}
+                            className={`appearance-none border text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none transition-all cursor-pointer ${
+                              rsvpAttendanceFilter === "Hadir"
+                                ? "bg-green-950/60 border-green-700 text-green-400 focus:border-green-400"
+                                : rsvpAttendanceFilter === "Tidak Hadir"
+                                ? "bg-red-950/60 border-red-700 text-red-400 focus:border-red-400"
+                                : "bg-neutral-950 border-neutral-800 text-neutral-300 hover:border-neutral-600 focus:border-white"
                             }`}
                           >
-                            {opt === "semua" ? "Semua" : `${opt} Orang`}
-                            <span className={`text-[10px] ${active ? "opacity-80" : "opacity-50"}`}>({count})</span>
-                          </button>
-                        );
-                      })}
+                            <option value="semua">Kehadiran: Semua ({wishes.length})</option>
+                            <option value="Hadir">Hadir ({wishes.filter(w => w.attendance === "Hadir").length})</option>
+                            <option value="Tidak Hadir">Tidak Hadir ({wishes.filter(w => w.attendance === "Tidak Hadir").length})</option>
+                          </select>
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                        </div>
+
+                        {/* Jumlah Tamu */}
+                        <div className="relative">
+                          <select
+                            id="rsvp-guests-filter"
+                            value={rsvpGuestsFilter}
+                            onChange={(e) => { setRsvpGuestsFilter(e.target.value as "semua" | "1" | "2"); setRsvpPage(1); }}
+                            className="appearance-none bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:border-white transition-all cursor-pointer hover:border-neutral-600"
+                          >
+                            <option value="semua">Tamu: Semua ({wishes.length})</option>
+                            <option value="1">1 Orang ({wishes.filter(w => Number(w.guests) === 1).length})</option>
+                            <option value="2">2 Orang ({wishes.filter(w => Number(w.guests) === 2).length})</option>
+                          </select>
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 text-[10px]">▼</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
