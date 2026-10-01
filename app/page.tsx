@@ -29,7 +29,12 @@ export default function Home() {
       if (isPreview) {
         isGuestValid = true;
       } else if (toParam) {
-        const decodedName = decodeURIComponent(toParam).trim();
+        let decodedName = toParam.trim();
+        try {
+          decodedName = decodeURIComponent(toParam).trim();
+        } catch {
+          decodedName = toParam.trim();
+        }
         setName(decodedName);
         try {
           const validRes = await fetch(`/api/validate-guest?name=${encodeURIComponent(decodedName)}`);
