@@ -35,6 +35,8 @@ export default function Home() {
         } catch {
           decodedName = toParam.trim();
         }
+        // Decode _and_ placeholder → & (for Instagram IAB safe links)
+        decodedName = decodedName.replace(/_and_/gi, '&').trim();
         setName(decodedName);
         try {
           const validRes = await fetch(`/api/validate-guest?name=${encodeURIComponent(decodedName)}`);
