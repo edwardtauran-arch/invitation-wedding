@@ -967,7 +967,7 @@ export default function AdminDashboard() {
     showToast("Link undangan berhasil disalin! 📋", "success");
   };
 
-  const handleCopyWATemplate = (guest: Guest) => {
+  const handleCopyWATemplate = async (guest: Guest) => {
     const msg = buildWhatsAppMsg(guest);
     if (!msg) {
       showToast("Template WA belum diatur. Cek tab Pengaturan → Template.", "error");
@@ -975,6 +975,21 @@ export default function AdminDashboard() {
     }
     navigator.clipboard.writeText(msg);
     showToast("Template WA berhasil disalin! 📲", "success");
+
+    // Update status tamu jadi Terkirim (sama seperti tombol Kirim WA)
+    try {
+      const res = await fetch(`/api/admin/guests/${guest._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Terkirim", sentAt: new Date().toISOString() }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setGuests(prev => prev.map(g => g._id === guest._id ? updated : g));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // Wishes/RSVP export
