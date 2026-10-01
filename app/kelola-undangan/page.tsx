@@ -967,6 +967,16 @@ export default function AdminDashboard() {
     showToast("Link undangan berhasil disalin! 📋", "success");
   };
 
+  const handleCopyWATemplate = (guest: Guest) => {
+    const msg = buildWhatsAppMsg(guest);
+    if (!msg) {
+      showToast("Template WA belum diatur. Cek tab Pengaturan → Template.", "error");
+      return;
+    }
+    navigator.clipboard.writeText(msg);
+    showToast("Template WA berhasil disalin! 📲", "success");
+  };
+
   // Wishes/RSVP export
   const exportWishesToCSV = () => {
     if (wishes.length === 0) return;
@@ -3266,6 +3276,15 @@ export default function AdminDashboard() {
                                     >
                                       <FaWhatsapp className="w-3.5 h-3.5" />
                                       <span>Kirim</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleCopyWATemplate(guest)}
+                                      className="flex items-center gap-x-1 px-3 py-1.5 bg-emerald-950/40 hover:bg-emerald-900/50 active:bg-emerald-950 text-emerald-400 hover:text-emerald-300 border border-emerald-800/50 hover:border-emerald-700 font-semibold rounded-lg text-xs transition"
+                                      title="Copy Template Pesan WA"
+                                    >
+                                      <FaWhatsapp className="w-3.5 h-3.5" />
+                                      <FaCopy className="w-3 h-3" />
                                     </button>
 
                                     <button
