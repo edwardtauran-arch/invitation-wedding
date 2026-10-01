@@ -916,7 +916,7 @@ export default function AdminDashboard() {
   const buildWhatsAppMsg = (guest: Guest): string => {
     if (!settings) return "";
     const origin = window.location.origin;
-    const inviteLink = `${origin}/?to=${encodeURIComponent(guest.name.toLowerCase()).replace(/%20/g, '+')}`;
+    const inviteLink = `${origin}/?to=${encodeURIComponent(guest.name.toLowerCase())}`;
     let m = settings.invitationTemplate || "";
     m = m.replace(/{nama}/g, guest.name);
     m = m.replace(/{link}/g, inviteLink);
@@ -962,7 +962,7 @@ export default function AdminDashboard() {
 
   const handleCopyLink = (name: string) => {
     const origin = window.location.origin;
-    const inviteLink = `${origin}/?to=${encodeURIComponent(name.toLowerCase()).replace(/%20/g, '+')}`;
+    const inviteLink = `${origin}/?to=${encodeURIComponent(name.toLowerCase())}`;
     navigator.clipboard.writeText(inviteLink);
     showToast("Link undangan berhasil disalin! 📋", "success");
   };
@@ -3223,7 +3223,7 @@ export default function AdminDashboard() {
                           </tr>
                         ) : (
                           pagedGuests.map((guest) => {
-                            const guestInviteUrl = `/?to=${encodeURIComponent(guest.name.toLowerCase()).replace(/%20/g, '+')}`;
+                            const guestInviteUrl = `/?to=${encodeURIComponent(guest.name.toLowerCase())}`;
                             return (
                               <tr key={guest._id} className="hover:bg-neutral-950/20 transition-all">
                                 <td className="px-6 py-4">
