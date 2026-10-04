@@ -522,15 +522,15 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDeleteWish = async (id: string) => {
-    showConfirm("Yakin ingin menghapus ucapan ini?", async () => {
+  const handleDeleteWish = async (id: string, type: "RSVP" | "Ucapan" = "RSVP") => {
+    showConfirm(`Yakin ingin menghapus ${type.toLowerCase()} ini?`, async () => {
       try {
         const res = await fetch(`/api/admin/wishes/${id}`, { method: "DELETE" });
         if (res.ok) {
           setWishes(prev => prev.filter(w => w._id !== id));
-          showToast("Ucapan berhasil dihapus.", "success");
+          showToast(`${type} berhasil dihapus.`, "success");
         } else {
-          showToast("Gagal menghapus ucapan.", "error");
+          showToast(`Gagal menghapus ${type.toLowerCase()}.`, "error");
         }
       } catch (e) {
         console.error(e);
@@ -3633,7 +3633,7 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                   <button
-                                    onClick={() => handleDeleteWish(wish._id)}
+                                    onClick={() => handleDeleteWish(wish._id, "RSVP")}
                                     className="p-2 text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 hover:border-red-900 rounded-lg transition"
                                     title="Hapus RSVP"
                                   >
@@ -3843,7 +3843,7 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                   <button
-                                    onClick={() => handleDeleteWish(wish._id)}
+                                    onClick={() => handleDeleteWish(wish._id, "Ucapan")}
                                     className="p-2 text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 hover:border-red-900 rounded-lg transition"
                                     title="Hapus Ucapan"
                                   >

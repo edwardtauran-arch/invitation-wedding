@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthorized } from "@/lib/authHelper";
-import { clearWishMessageBulk } from "@/lib/dbHelper";
+import { deleteDynamicWishBulk } from "@/lib/dbHelper";
 
 export async function POST(req: Request) {
   if (!isAuthorized()) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    await clearWishMessageBulk(ids);
+    await deleteDynamicWishBulk(ids);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Bulk delete wish error:", error);
