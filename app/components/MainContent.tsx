@@ -105,6 +105,66 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const audioRef = useRef(null);
 
+  // Status & modal prompt RSVP saat scroll ke Live Streaming atau Galeri Foto
+  const [hasSubmittedRSVP, setHasSubmittedRSVP] = useState(false);
+  const [showRsvpPromptModal, setShowRsvpPromptModal] = useState(false);
+  const [wishCount, setWishCount] = useState<number>(0);
+
+  // Ref untuk mendeteksi perpindahan slide (Galeri & Live Streaming)
+  const prevTriggerStateRef = useRef({ slide7: false, gallery: false });
+
+  // Ambil jumlah ucapan saat awal muat
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await fetch("/api/get?page=1&limit=200", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          const valid = (data.wishes || []).filter(
+            (w: any) => w.message && w.message.trim() !== ""
+          );
+          setWishCount(valid.length);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    fetchCount();
+  }, []);
+
+  // 1. Cek di awal apakah tamu ini sudah pernah RSVP
+  useEffect(() => {
+    if (!name) return;
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/check-wish?name=${encodeURIComponent(name)}`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.exists) {
+            setHasSubmittedRSVP(true);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+    checkStatus();
+  }, [name]);
+
+  // 2. Dengarkan event submit RSVP (saat tamu berhasil submit di form)
+  useEffect(() => {
+    const handleWishSubmitted = (e: Event) => {
+      setHasSubmittedRSVP(true);
+      setShowRsvpPromptModal(false);
+      const detail = (e as CustomEvent).detail;
+      if (detail?.message?.trim()) {
+        setWishCount((prev) => prev + 1);
+      }
+    };
+    window.addEventListener("wishSubmitted", handleWishSubmitted);
+    return () => window.removeEventListener("wishSubmitted", handleWishSubmitted);
+  }, []);
+
   useEffect(() => {
     if (slideshowImages.length <= 1) return;
     const interval = setInterval(() => {
@@ -244,7 +304,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
     threshold: 0.5,
   });
   const { ref: slide7Ref, inView: isSlide7InView } = useInView({
-    threshold: 0.5,
+    threshold: 0.2,
   });
   const { ref: slide8Ref, inView: isSlide8InView } = useInView({
     threshold: 0.5,
@@ -279,6 +339,31 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
       }
     }
   }, [isSlide8InView]);
+
+  // Trigger popup ketika tamu scroll ke Galeri Foto atau Live Streaming (selama belum pernah/submit RSVP)
+  useEffect(() => {
+    if (hasSubmittedRSVP || isPreview) return;
+
+    const justEnteredSlide7 = isSlide7InView && !prevTriggerStateRef.current.slide7;
+    const justEnteredGallery = isGalleryInView && !prevTriggerStateRef.current.gallery;
+
+    if (justEnteredSlide7 || justEnteredGallery) {
+      setShowRsvpPromptModal(true);
+    }
+
+    prevTriggerStateRef.current = {
+      slide7: isSlide7InView,
+      gallery: isGalleryInView,
+    };
+  }, [isSlide7InView, isGalleryInView, hasSubmittedRSVP, isPreview]);
+
+  const handleScrollToRsvp = () => {
+    setShowRsvpPromptModal(false);
+    const el = document.getElementById("section-rsvp");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <div
@@ -925,6 +1010,7 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             {/* SLIDE 9 & 10 Merged (RSVP and Wishes) */}
             {config.rsvp.enabled && (
               <div
+                id="section-rsvp"
                 className="snap-start text-white h-screen flex flex-col justify-center py-6 px-4 md:px-8"
                 style={{
                   backgroundImage: `url(${config.slideImages?.slide9 || "/slide_9.jpg"})`,
@@ -1099,6 +1185,54 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
             <p className="mt-4 md:mt-6 text-neutral-800 font-bold tracking-widest text-center uppercase text-sm md:text-lg">
               {config.weddingGift.qrisOwnerName || config.coupleNames}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* RSVP Reminder Modal ketika scroll ke Live Streaming atau Galeri Foto */}
+      {showRsvpPromptModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fadeIn">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl border border-white/20 bg-neutral-900/95 p-6 text-white shadow-2xl text-center flex flex-col items-center space-y-4"
+          >
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-2xl shadow-inner">
+              ✉️
+            </div>
+
+            <h3 className="text-base md:text-lg font-ovo uppercase tracking-wider font-semibold">
+              Hai {name || "Tamu Undangan"}!
+            </h3>
+
+            <p className="text-xs md:text-sm font-legan text-white/80 leading-relaxed">
+              Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!
+            </p>
+
+            {wishCount > 0 && (
+              <div className="bg-white/10 rounded-xl px-4 py-2 border border-white/10 text-xs font-legan text-emerald-300 w-full text-center">
+                ✨ Sudah ada <strong>{wishCount}</strong> orang yang mengisi ucapan
+              </div>
+            )}
+
+            <div className="flex flex-col w-full gap-2 mt-2">
+              <button
+                onClick={handleScrollToRsvp}
+                className="w-full py-3 px-5 rounded-full bg-white text-black font-semibold text-xs md:text-sm shadow-lg hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Isi Ucapan & RSVP</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path fillRule="evenodd" d="M10 3a.75.75 0 0 1 .75.75v10.69l3.72-3.72a.75.75 0 1 1 1.06 1.06l-5 5a.75.75 0 0 1-1.06 0l-5-5a.75.75 0 1 1 1.06-1.06l3.72 3.72V3.75A.75.75 0 0 1 10 3Z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => setShowRsvpPromptModal(false)}
+                className="w-full py-2.5 px-5 rounded-full border border-white/20 text-white/70 hover:text-white hover:bg-white/10 text-xs transition-all cursor-pointer font-legan"
+              >
+                Nanti
+              </button>
+            </div>
           </div>
         </div>
       )}
