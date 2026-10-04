@@ -41,10 +41,8 @@ const WishesList = () => {
       if (!newWish.message?.trim()) return; // hanya tampil jika ada pesan
 
       setWishes((prev) => {
-        // Hindari duplikat jika sudah ada nama yang sama (pending)
-        const filtered = prev.filter(
-          (w) => !w._id.startsWith("pending_") || w.name !== newWish.name
-        );
+        // Hindari duplikat: ganti ucapan lama dari nama yang sama (update)
+        const filtered = prev.filter((w) => w.name !== newWish.name);
         return [newWish, ...filtered];
       });
     };

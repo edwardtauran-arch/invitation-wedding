@@ -184,8 +184,10 @@ export default function AdminDashboard() {
   const [rsvpGuestsFilter, setRsvpGuestsFilter] = useState<"semua" | "1" | "2">("semua");
   const [rsvpPage, setRsvpPage] = useState(1);
   const [rsvpPageSize, setRsvpPageSize] = useState<20 | 30 | 50>(20);
+  const [rsvpSearch, setRsvpSearch] = useState("");
 
   // Wishes sort & pagination
+  const [wishSearch, setWishSearch] = useState("");
   const [wishSort, setWishSort] = useState<"lama-baru" | "baru-lama">("baru-lama");
   const [wishPage, setWishPage] = useState(1);
   const [wishPageSize, setWishPageSize] = useState<20 | 30 | 50>(20);
@@ -1082,6 +1084,7 @@ export default function AdminDashboard() {
 
   // RSVP filtered, sorted & paged
   const filteredRsvps = wishes.filter(w => {
+    if (rsvpSearch.trim() && !(w.name || "").toLowerCase().includes(rsvpSearch.trim().toLowerCase())) return false;
     if (rsvpAttendanceFilter !== "semua" && w.attendance !== rsvpAttendanceFilter) return false;
     if (rsvpGuestsFilter === "1" && Number(w.guests) !== 1) return false;
     if (rsvpGuestsFilter === "2" && Number(w.guests) !== 2) return false;
@@ -1097,7 +1100,12 @@ export default function AdminDashboard() {
   const pagedRsvps = sortedRsvps.slice((rsvpPageClamped - 1) * rsvpPageSize, rsvpPageClamped * rsvpPageSize);
 
   // Wishes sorted & paged (only with non-empty message)
-  const validWishes = wishes.filter(w => w.message && w.message.trim() !== "");
+  const validWishes = wishes.filter(w => {
+    if (!w.message || w.message.trim() === "") return false;
+    const q = wishSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (w.name || "").toLowerCase().includes(q) || w.message.toLowerCase().includes(q);
+  });
   const sortedWishes = [...validWishes].sort((a, b) => {
     const aT = new Date(a.createdAt).getTime();
     const bT = new Date(b.createdAt).getTime();
@@ -3008,21 +3016,28 @@ export default function AdminDashboard() {
                 {/* Live Preview (Mobile Device mockup) */}
                 <div className="lg:col-span-4 hidden lg:flex flex-col lg:h-full lg:overflow-hidden justify-start">
                   <div className="space-y-3 w-full flex flex-col items-center flex-1 min-h-0">
-                    <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center justify-between w-[270px] px-1">
                       <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-x-2">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span>Live Preview</span>
                       </span>
 
                       <button
-                        onClick={() => {
+                        id="refresh-preview-btn"
+                        onClick={(e) => {
                           const iframe = document.getElementById("preview-iframe") as HTMLIFrameElement;
                           if (iframe) iframe.src = iframe.src;
+                          const icon = e.currentTarget.querySelector("svg");
+                          icon?.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(360deg)" }], { duration: 600, easing: "ease-in-out" });
                         }}
-                        className="text-xs text-neutral-400 hover:text-white flex items-center gap-x-1 transition font-medium"
+                        className="group w-8 h-8 rounded-full border border-neutral-800 bg-neutral-900/80 text-neutral-400 hover:text-white hover:border-neutral-600 hover:bg-neutral-800 flex items-center justify-center transition-all"
                         title="Refresh Preview"
+                        aria-label="Refresh Preview"
                       >
-                        <span>Refresh</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 transition-transform duration-300 group-hover:rotate-45">
+                          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                          <polyline points="21 3 21 9 15 9" />
+                        </svg>
                       </button>
                     </div>
 
@@ -3467,6 +3482,29 @@ export default function AdminDashboard() {
                   {/* Filter & Sort bar */}
                   <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl backdrop-blur-md">
                     <div className="flex flex-wrap items-center gap-2 justify-between">
+                      {/* Search */}
+                      <div className="relative w-full md:w-1/3">
+                        <input
+                          id="rsvp-search-input"
+                          type="text"
+                          placeholder="Cari nama tamu..."
+                          value={rsvpSearch}
+                          onChange={(e) => { setRsvpSearch(e.target.value); setRsvpPage(1); }}
+                          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 pr-8 text-white focus:outline-none focus:border-white transition-all text-sm"
+                        />
+                        {rsvpSearch && (
+                          <button
+                            onClick={() => { setRsvpSearch(""); setRsvpPage(1); }}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                            title="Hapus pencarian"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
                       {/* Count */}
                       <span className="text-xs text-neutral-500 shrink-0">
                         {filteredRsvps.length !== wishes.length
@@ -3559,7 +3597,7 @@ export default function AdminDashboard() {
                         <tbody className="divide-y divide-neutral-800/60 text-sm text-neutral-300">
                           {pagedRsvps.length === 0 ? (
                             <tr>
-                              <td colSpan={6} className="py-8 text-center text-neutral-500">Belum ada respon RSVP</td>
+                              <td colSpan={6} className="py-8 text-center text-neutral-500">{rsvpSearch.trim() ? `Tidak ada RSVP dengan nama "${rsvpSearch}"` : "Belum ada respon RSVP"}</td>
                             </tr>
                           ) : (
                             pagedRsvps.map((wish) => (
@@ -3704,6 +3742,34 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  {/* Search bar */}
+                  <div className="bg-neutral-900/60 border border-neutral-800/80 p-3 rounded-xl backdrop-blur-md flex flex-wrap items-center gap-2 justify-between">
+                    <div className="relative w-full md:w-1/3">
+                      <input
+                        id="wish-search-input"
+                        type="text"
+                        placeholder="Cari nama atau isi ucapan..."
+                        value={wishSearch}
+                        onChange={(e) => { setWishSearch(e.target.value); setWishPage(1); }}
+                        className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 pr-8 text-white focus:outline-none focus:border-white transition-all text-sm"
+                      />
+                      {wishSearch && (
+                        <button
+                          onClick={() => { setWishSearch(""); setWishPage(1); }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
+                          title="Hapus pencarian"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                            <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-xs text-neutral-500 shrink-0">
+                      {sortedWishes.length} ucapan{wishSearch.trim() ? " ditemukan" : ""}
+                    </span>
+                  </div>
+
                   {/* Wishes Table */}
                   <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-2xl overflow-hidden backdrop-blur-md">
                     <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-380px)]">
@@ -3749,7 +3815,7 @@ export default function AdminDashboard() {
                         <tbody className="divide-y divide-neutral-800/60 text-sm text-neutral-300">
                           {pagedWishes.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="py-8 text-center text-neutral-500">Belum ada ucapan yang masuk.</td>
+                              <td colSpan={5} className="py-8 text-center text-neutral-500">{wishSearch.trim() ? `Tidak ada ucapan yang cocok dengan "${wishSearch}"` : "Belum ada ucapan yang masuk."}</td>
                             </tr>
                           ) : (
                             pagedWishes.map((wish) => (

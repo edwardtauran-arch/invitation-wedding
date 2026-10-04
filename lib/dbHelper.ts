@@ -579,14 +579,56 @@ export async function getDynamicWishes(page: number, limit: number) {
   }
 }
 
+// Cari RSVP/ucapan yang sudah ada berdasarkan nama (untuk konfirmasi sebelum update)
+export async function findWishByName(name: string) {
+  try {
+    const { data, error } = await supabase
+      .from("wishes")
+      .select("*")
+      .eq("name", name)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (!error) {
+      const w = data?.[0];
+      if (!w) return null;
+      return {
+        _id: w.id,
+        name: w.name,
+        attendance: w.attendance,
+        guests: w.guests,
+        message: w.message,
+        createdAt: w.created_at,
+        updatedAt: w.updated_at,
+      };
+    }
+  } catch (err) {
+    console.warn("Supabase find wish failed, using file fallback.", err);
+  }
+
+  // Fallback to JSON file
+  await ensureDataDir();
+  const filePath = path.join(DATA_DIR, "wishes.json");
+  try {
+    const fileData = await fs.readFile(filePath, "utf-8");
+    const wishes = JSON.parse(fileData);
+    return wishes.find((w: any) => w.name === name) ?? null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function createDynamicWish(wishData: any) {
   try {
     // Check if wish from same person already exists (upsert logic)
-    const { data: existing } = await supabase
+    // Use .limit(1) instead of .single() to avoid crash when duplicates exist
+    const { data: existingList } = await supabase
       .from("wishes")
       .select("*")
       .eq("name", wishData.name)
-      .single();
+      .limit(1);
+
+    const existing = existingList?.[0] ?? null;
 
     if (existing) {
       const updatePayload: any = {
@@ -594,7 +636,7 @@ export async function createDynamicWish(wishData: any) {
         guests: wishData.guests,
         updated_at: new Date().toISOString(),
       };
-      if (wishData.message) updatePayload.message = wishData.message;
+      if (wishData.message?.trim()) updatePayload.message = wishData.message;
 
       const { data, error } = await supabase
         .from("wishes")
@@ -655,7 +697,7 @@ export async function createDynamicWish(wishData: any) {
   if (existingIndex !== -1) {
     wishes[existingIndex].attendance = wishData.attendance;
     wishes[existingIndex].guests = wishData.guests;
-    if (wishData.message) wishes[existingIndex].message = wishData.message;
+    if (wishData.message?.trim()) wishes[existingIndex].message = wishData.message;
     wishes[existingIndex].updatedAt = new Date().toISOString();
     const [updatedWish] = wishes.splice(existingIndex, 1);
     wishes.unshift(updatedWish);
