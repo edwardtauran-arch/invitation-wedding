@@ -618,7 +618,22 @@ export async function findWishByName(name: string) {
   }
 }
 
-export async function createDynamicWish(wishData: any) {
+export async function createDynamicWish(rawWishData: any) {
+  // Normalisasi jumlah tamu: "Tidak Hadir" selalu 0.
+  // Jangan pakai `guests || 1` karena 0 dianggap falsy → berubah jadi 1.
+  const attendance = rawWishData.attendance || "Hadir";
+  const parsedGuests = Number(rawWishData.guests);
+  const wishData = {
+    ...rawWishData,
+    attendance,
+    guests:
+      attendance === "Tidak Hadir"
+        ? 0
+        : Number.isFinite(parsedGuests) && parsedGuests > 0
+        ? parsedGuests
+        : 1,
+  };
+
   try {
     // Check if wish from same person already exists (upsert logic)
     // Use .limit(1) instead of .single() to avoid crash when duplicates exist
@@ -661,8 +676,8 @@ export async function createDynamicWish(wishData: any) {
         .from("wishes")
         .insert({
           name: wishData.name,
-          attendance: wishData.attendance || "Hadir",
-          guests: wishData.guests || 1,
+          attendance: wishData.attendance,
+          guests: wishData.guests,
           message: wishData.message || "",
         })
         .select()
