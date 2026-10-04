@@ -1100,6 +1100,7 @@ export default function AdminDashboard() {
   const pagedRsvps = sortedRsvps.slice((rsvpPageClamped - 1) * rsvpPageSize, rsvpPageClamped * rsvpPageSize);
 
   // Wishes sorted & paged (only with non-empty message)
+  const wishMessageCount = wishes.filter(w => w.message && w.message.trim() !== "").length;
   const validWishes = wishes.filter(w => {
     if (!w.message || w.message.trim() === "") return false;
     const q = wishSearch.trim().toLowerCase();
@@ -1274,9 +1275,9 @@ export default function AdminDashboard() {
             >
               <FaComments className="w-4 h-4" />
               <span>Ucapan</span>
-              {wishes.length > 0 && (
+              {wishMessageCount > 0 && (
                 <span className="bg-red-500 text-white text-[10px] h-5 px-1.5 flex items-center justify-center rounded-full font-bold">
-                  {wishes.length}
+                  {wishMessageCount}
                 </span>
               )}
             </button>
@@ -1489,9 +1490,9 @@ export default function AdminDashboard() {
           >
             <FaComments className="w-5 h-5" />
             <span>Ucapan</span>
-            {wishes.length > 0 && (
+            {wishMessageCount > 0 && (
               <span className="bg-red-500 text-white text-[10px] h-5 px-1.5 flex items-center justify-center rounded-full font-bold ml-auto">
-                {wishes.length}
+                {wishMessageCount}
               </span>
             )}
           </button>
