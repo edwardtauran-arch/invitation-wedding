@@ -146,6 +146,11 @@ Kalau mau bantu isi "logistik" perbekalan hidup baru kami, boleh banget mampir k
 📱 atau bisa juga langsung scan QRIS yang ada di dalam undangan ya!`,
     },
 
+    popupTemplate: {
+      type: String,
+      default: `Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!`,
+    },
+
     // Wedding Gift / Amplop Digital
     weddingGift: {
       enabled: { type: Boolean, default: true },

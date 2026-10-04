@@ -133,6 +133,7 @@ Tuhan memberkati!
 Kalau mau bantu isi "logistik" perbekalan hidup baru kami, boleh banget mampir ke:
 💰 SMBC 90360127959 a.n. Mardianti Ekaputri P
 📱 atau bisa juga langsung scan QRIS yang ada di dalam undangan ya!`,
+    popupTemplate: `Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!`,
     weddingGift: {
       enabled: true,
       qrisImage: "",

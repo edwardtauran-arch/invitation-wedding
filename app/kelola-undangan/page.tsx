@@ -87,6 +87,7 @@ interface Settings {
     sideImage: string;
   };
   invitationTemplate: string;
+  popupTemplate?: string;
   galleryImages?: string[];
   weddingGift?: {
     enabled: boolean;
@@ -156,9 +157,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"settings" | "guests" | "rsvp" | "wishes">("settings");
 
   // Settings tab sub-sections
-  const [settingsSection, setSettingsSection] = useState<"general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "prewedding" | "dresscode" | "media" | "weddingGift" | "penutup" | "template">("general");
+  const [settingsSection, setSettingsSection] = useState<"general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "prewedding" | "dresscode" | "media" | "weddingGift" | "penutup" | "template" | "popupTemplate">("general");
 
-  const handleSelectSection = useCallback((sec: "general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "prewedding" | "dresscode" | "media" | "weddingGift" | "penutup" | "template") => {
+  const handleSelectSection = useCallback((sec: "general" | "groomBride" | "loveJourney" | "events" | "livestreaming" | "prewedding" | "dresscode" | "media" | "weddingGift" | "penutup" | "template" | "popupTemplate") => {
     setSettingsSection(sec);
     const iframe = document.getElementById("preview-iframe") as HTMLIFrameElement;
     if (iframe && iframe.contentWindow) {
@@ -1550,6 +1551,7 @@ export default function AdminDashboard() {
                       {settingsSection === "weddingGift" && "Hadiah / Amplop Digital"}
                       {settingsSection === "penutup" && "Penutup & Ucapan Terima Kasih"}
                       {settingsSection === "template" && "Template Undangan WA"}
+                      {settingsSection === "popupTemplate" && "Template Tulisan Popup"}
                     </span>
                   </div>
                   <button
@@ -1720,6 +1722,19 @@ export default function AdminDashboard() {
                       >
                         Template Undangan WA
                       </button>
+
+                      <button
+                        onClick={() => {
+                          handleSelectSection("popupTemplate");
+                          setIsEditNavOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all ${settingsSection === "popupTemplate"
+                          ? "bg-white text-black font-semibold shadow-md"
+                          : "text-neutral-500 hover:text-white hover:bg-neutral-900/60"
+                          }`}
+                      >
+                        Template Tulisan Popup
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1828,6 +1843,16 @@ export default function AdminDashboard() {
                       }`}
                   >
                     Template Undangan WA
+                  </button>
+
+                  <button
+                    onClick={() => handleSelectSection("popupTemplate")}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${settingsSection === "popupTemplate"
+                      ? "bg-neutral-800 text-white font-medium border-l-2 border-white"
+                      : "text-neutral-500 hover:text-white hover:bg-neutral-900/60"
+                      }`}
+                  >
+                    Template Tulisan Popup
                   </button>
                 </div>
 
@@ -2720,6 +2745,34 @@ export default function AdminDashboard() {
                             onChange={(e) => handleUpdateField("invitationTemplate", e.target.value)}
                             className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-white font-mono leading-relaxed"
                             placeholder="Tulis template pesan di sini..."
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SECTION: POPUP MESSAGE TEMPLATE */}
+                    {settingsSection === "popupTemplate" && (
+                      <div className="space-y-6">
+                        <h2 className="text-xl font-ovo border-b border-neutral-800 pb-3 text-white uppercase tracking-wider">Template Tulisan Popup</h2>
+
+                        <div className="bg-neutral-950/50 border border-neutral-800/80 p-4 rounded-xl text-xs space-y-2 leading-relaxed text-neutral-300">
+                          <p className="font-semibold flex items-center gap-x-2 text-white">
+                            <FaInfoCircle className="text-blue-400 text-sm" /> PETUNJUK TEMPLATE POPUP:
+                          </p>
+                          <p>Teks ini akan muncul pada dialog popup pengingat ketika tamu membuka undangan dan belum mengisi RSVP / ucapan.</p>
+                          <ul className="list-disc pl-4 space-y-1 font-mono text-neutral-400">
+                            <li><strong className="text-white">{"{nama}"}</strong> : Nama dari tamu (misal: Budi Santoso)</li>
+                          </ul>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-xs font-semibold text-neutral-400 uppercase tracking-wide">Pesan Tulisan Popup</label>
+                          <textarea
+                            rows={6}
+                            value={settings.popupTemplate ?? "Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!"}
+                            onChange={(e) => handleUpdateField("popupTemplate", e.target.value)}
+                            className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-white font-mono leading-relaxed"
+                            placeholder="Tulis template popup di sini..."
                           />
                         </div>
                       </div>

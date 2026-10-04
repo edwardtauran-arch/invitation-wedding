@@ -46,6 +46,7 @@ export const config = {
         enabled: process.env.NEXT_PUBLIC_RSVP === 'true',
         detail: process.env.NEXT_PUBLIC_RSVP_DETAIL || "Default RSVP Detail",
     },
+    popupTemplate: process.env.NEXT_PUBLIC_POPUP_TEMPLATE || "Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!",
     thankyou: process.env.NEXT_PUBLIC_THANKYOU || "Default Thank You",
     thankyouDetail: process.env.NEXT_PUBLIC_THANKYOU_DETAIL || "Default Thank You Detail",
     craftedWithLove: process.env.NEXT_PUBLIC_CRAFTED_WITH_LOVE || "Crafted with Love",

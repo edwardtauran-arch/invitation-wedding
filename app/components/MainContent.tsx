@@ -1205,8 +1205,8 @@ const WeddingScreen = ({ name, config: dynamicConfig, isPreview = false }: Weddi
               Hai {name || "Tamu Undangan"}!
             </h3>
 
-            <p className="text-xs md:text-sm font-legan text-white/80 leading-relaxed">
-              Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!
+            <p className="text-xs md:text-sm font-legan text-white/80 leading-relaxed whitespace-pre-line">
+              {(config.popupTemplate || "Kamu sudah ucapin ucapan & doa restu serta memastikan kehadirannya belum? Kalau belum, langsung saja!").replace(/{nama}/g, name || "Tamu Undangan")}
             </p>
 
             {wishCount > 0 && (
